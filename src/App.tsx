@@ -15,16 +15,71 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
-function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Đang tải...</p>
+      </div>
+    </div>
+  );
+}
 
+function AppRoutes() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+  
   return (
     <Routes>
-     <Route path="/" element={<LoginPage />} />
-     <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-     <Route path="/users" element={<Layout><UserManagement /></Layout>} />
-     <Route path="/posts" element={<Layout><PostManagement /></Layout>} />
-     <Route path="/reports" element={<Layout><ReportManagement /></Layout>} />
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
+      />
+      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Dashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <UserManagement />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/posts"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <PostManagement />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ReportManagement />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
