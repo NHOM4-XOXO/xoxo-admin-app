@@ -1,15 +1,14 @@
 import { useState } from "react";
-import { X } from "lucide-react";
-import type { UserType } from "../../types/User.type";
-
+import { X, Loader2 } from "lucide-react";
+import { useCreateUserMutation, type User } from "../../store/api";
 
 interface AddUserModalProps {
   onClose: () => void;
-  onAdd: (newUser: UserType) => void;
 }
 
-export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
-  const [formData, setFormData] = useState<Omit<UserType, "id" | "createdAt">>({
+export default function AddUserModal({ onClose }: AddUserModalProps) {
+  const [createUser, { isLoading }] = useCreateUserMutation();
+  const [formData, setFormData] = useState<Omit<User, "id" | "createdAt">>({
     name: "",
     email: "",
     avatar: "/placeholder.svg",
@@ -30,15 +29,15 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newUser: UserType = {
-      ...formData,
-      id: Date.now(), // ID giả lập
-      createdAt: new Date().toISOString(),
-    };
-    onAdd(newUser);
-    onClose();
+    try {
+      await createUser(formData).unwrap();
+      onClose();
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      // TODO: Show error message to user
+    }
   };
 
   return (
@@ -154,11 +153,21 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
           </div>
         </div>
 
-        <div className="flex justify-end mt-6">
+        <div className="flex justify-end mt-6 space-x-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+          >
+            Hủy
+          </button>
           <button
             type="submit"
-            className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700"
+            disabled={isLoading}
+            className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
           >
+            {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Thêm mới
           </button>
         </div>
