@@ -98,7 +98,7 @@
       "birthday": "2000-01-01",
       "gender": "male",
       "role": "user",
-      "status": "active",
+      "status": "banned",
       "createdAt": "2023-05-01T12:00:00Z",
       "friends": [
         2
@@ -119,7 +119,7 @@
       "birthday": "1995-03-15",
       "gender": "female",
       "role": "admin",
-      "status": "banned",
+      "status": "active",
       "createdAt": "2023-04-20T08:30:00Z",
       "friends": [
         1
@@ -135,7 +135,7 @@
       "email": "d@example.com",
       "avatar": "/placeholder.svg",
       "role": "user",
-      "status": "active",
+      "status": "banned",
       "createdAt": "2024-01-12T09:00:00Z",
       "location": "Đà Nẵng",
       "gender": "female",
@@ -227,7 +227,7 @@
       "role": "user",
       "status": "active",
       "createdAt": "2024-02-18T08:00:00Z",
-      "gender": "female",
+      "gender": "male",
       "location": "Biên Hòa",
       "bio": "Marketing freelancer.",
       "birthday": "1997-09-14",
