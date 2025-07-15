@@ -10,8 +10,13 @@ import {
   ShieldAlert,
   UserX,
 } from "lucide-react";
-import { useGetReportsQuery, useUpdateReportMutation } from "../api/reportApi";
-import type { Report } from "../types/Report.type";
+import {
+  useGetReportsQuery,
+  useUpdateReportMutation,
+  
+} from "../api/reportApi.ts";
+import Pagination from "../components/Pagination";
+import type { Report } from "../types/Report.type.ts";
 
 export default function ReportManagement() {
   // Redux hooks for data fetching and mutations
@@ -24,6 +29,15 @@ export default function ReportManagement() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
+  const currentReports = filteredReports.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
@@ -77,6 +91,10 @@ export default function ReportManagement() {
     }
   };
 
+  const handleFilterByStatus = (status: string) => {
+    setStatusFilter(status);
+  };
+
   const viewReportDetails = (report: Report) => {
     setSelectedReport(report);
     setShowReportModal(true);
@@ -117,48 +135,70 @@ export default function ReportManagement() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <ShieldAlert className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng báo cáo</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("all")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <ShieldAlert className="w-8 h-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Tổng báo cáo
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <Clock className="w-8 h-8 text-yellow-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.filter((r) => r.status === "hidden").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("hidden")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <Clock className="w-8 h-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.filter((r) => r.status === "hidden").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <Check className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đã xử lý</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.filter((r) => r.status === "published").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("published")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <Check className="w-8 h-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Đã xử lý</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.filter((r) => r.status === "published").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <UserX className="w-8 h-8 text-red-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Vi phạm</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.filter((r) => r.status === "reported").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("reported")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <UserX className="w-8 h-8 text-red-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Vi phạm</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.filter((r) => r.status === "reported").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -191,7 +231,7 @@ export default function ReportManagement() {
 
       {/* Reports Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className=" overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -216,7 +256,7 @@ export default function ReportManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredReports.map((report) => (
+              {currentReports.map((report) => (
                 <tr key={report.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
@@ -417,6 +457,14 @@ export default function ReportManagement() {
           </div>
         </div>
       )}
+      {/* Call Components Pagination */}
+      <div className="flex justify-center p-4">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      </div>
     </div>
   );
 }
