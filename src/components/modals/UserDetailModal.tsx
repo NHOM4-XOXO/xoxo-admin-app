@@ -13,7 +13,7 @@ import {
   Pencil,
   X
 } from "lucide-react";
-import type { UserType } from "../../types/User.type";
+import type { User as UserType } from "../../types/User.type";
 
 
 interface UserDetailModalProps {

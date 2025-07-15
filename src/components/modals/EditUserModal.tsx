@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import type { UserType } from "../../types/User.type";
-import { useUpdateUserMutation } from "../../store/api";
+import { useUpdateUserMutation } from "../../api/userApi";
+import type { User } from "../../types/User.type";
 
 
 interface EditUserModalProps {
-  user: UserType;
+  user: User;
   onClose: () => void;
 }
 
 export default function EditUserModal({ user, onClose }: EditUserModalProps) {
-  const [formData, setFormData] = useState<UserType>({ ...user });
+  const [formData, setFormData] = useState<User>({ ...user });
   const [updateUser, { isLoading }] = useUpdateUserMutation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {

@@ -20,13 +20,13 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
 import {
   useGetActivitiesQuery,
   useGetChartDataQuery,
   useGetStatsQuery,
   useGetTopPostsQuery,
-} from "../store/api";
-import { useNavigate } from "react-router-dom";
+} from "../api/dashboardApi";
 
 const Dashboard = () => {
   const navigate = useNavigate();

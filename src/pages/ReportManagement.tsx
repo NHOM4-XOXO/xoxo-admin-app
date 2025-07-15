@@ -10,11 +10,8 @@ import {
   ShieldAlert,
   UserX,
 } from "lucide-react";
-import {
-  useGetReportsQuery,
-  useUpdateReportMutation,
-  type Report,
-} from "../store/api";
+import { useGetReportsQuery, useUpdateReportMutation } from "../api/reportApi";
+import type { Report } from "../types/Report.type";
 
 export default function ReportManagement() {
   // Redux hooks for data fetching and mutations

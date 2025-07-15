@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = {
         name: "Admin User",
         email: "admin@example.com",
-        role: "Administrator",
+        role: "admin",
       };
 
       setIsAuthenticated(true);

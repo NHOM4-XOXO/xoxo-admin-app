@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { Eye, Ban, Trash2, Loader2, Plus } from "lucide-react";
-import {
-  useGetUsersQuery,
-  useUpdateUserMutation,
-  useDeleteUserMutation,
-  type User as UserType,
-} from "../store/api";
 import AddUserModal from "../components/modals/AddUserModal";
 import ConfirmModal from "../components/modals/ConfirmModal";
 import UserDetailModal from "../components/modals/UserDetailModal";
 import EditUserModal from "../components/modals/EditUserModal";
+import { useDeleteUserMutation, useGetUsersQuery, useUpdateUserMutation } from "../api/userApi";
+import type { User as UserType } from "../types/User.type";
 
 export default function UserManagement() {
   const { data: users = [], isLoading, error } = useGetUsersQuery();

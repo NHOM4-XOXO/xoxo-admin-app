@@ -83,7 +83,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <p className="text-sm font-medium text-gray-900">
                       {user?.name}
                     </p>
-                    <p className="text-xs text-gray-500">{user?.role}</p>
+                    <p className="text-xs text-gray-500">
+                      {user?.role === "admin" ? "Administrator" : ""}
+                    </p>
                   </div>
                 </div>
                 <button
