@@ -1,0 +1,480 @@
+{
+  "stats": {
+    "id": 1,
+    "totalUsers": 12540,
+    "newUsersToday": 234,
+    "totalPosts": 8750,
+    "newPostsToday": 156,
+    "pendingReports": 23,
+    "onlineUsers": 1840,
+    "engagementRate": 78.5,
+    "updatedAt": "2024-12-19T10:30:00Z"
+  },
+  "activities": [
+    {
+      "id": "1",
+      "type": "report",
+      "message": "Báo cáo nội dung không phù hợp từ user @john_doe",
+      "time": "2 phút trước",
+      "urgent": true,
+      "userId": "user123",
+      "createdAt": "2024-12-19T10:28:00Z"
+    },
+    {
+      "id": "2",
+      "type": "user",
+      "message": "Người dùng mới đăng ký: @new_user123",
+      "time": "5 phút trước",
+      "urgent": false,
+      "userId": "user456",
+      "createdAt": "2024-12-19T10:25:00Z"
+    },
+    {
+      "id": "3",
+      "type": "post",
+      "message": "Bài viết viral: \"Trending topic hôm nay\"",
+      "time": "10 phút trước",
+      "urgent": false,
+      "postId": "post789",
+      "createdAt": "2024-12-19T10:20:00Z"
+    },
+    {
+      "id": "4",
+      "type": "report",
+      "message": "Báo cáo spam từ user @suspicious_acc",
+      "time": "15 phút trước",
+      "urgent": true,
+      "userId": "user999",
+      "createdAt": "2024-12-19T10:15:00Z"
+    },
+    {
+      "id": "5",
+      "type": "user",
+      "message": "User @popular_user đạt 10K followers",
+      "time": "20 phút trước",
+      "urgent": false,
+      "userId": "user555",
+      "createdAt": "2024-12-19T10:10:00Z"
+    }
+  ],
+  "topPosts": [
+    {
+      "id": "1",
+      "title": "Xu hướng công nghệ 2024",
+      "likes": 1250,
+      "comments": 89,
+      "shares": 156,
+      "authorId": "user101",
+      "createdAt": "2024-12-19T08:00:00Z"
+    },
+    {
+      "id": "2",
+      "title": "Kinh nghiệm học lập trình",
+      "likes": 980,
+      "comments": 67,
+      "shares": 123,
+      "authorId": "user102",
+      "createdAt": "2024-12-19T07:30:00Z"
+    },
+    {
+      "id": "3",
+      "title": "Review smartphone mới nhất",
+      "likes": 750,
+      "comments": 45,
+      "shares": 89,
+      "authorId": "user103",
+      "createdAt": "2024-12-19T07:00:00Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "name": "Nguyễn Văn A",
+      "email": "a@example.com",
+      "avatar": "/placeholder.svg",
+      "coverPhoto": "/cover.jpg",
+      "bio": "Yêu công nghệ, đam mê du lịch.",
+      "location": "Hà Nội",
+      "birthday": "2000-01-01",
+      "gender": "male",
+      "role": "user",
+      "status": "banned",
+      "createdAt": "2023-05-01T12:00:00Z",
+      "friends": [
+        2
+      ],
+      "followers": [
+        2
+      ],
+      "following": []
+    },
+    {
+      "id": "2",
+      "name": "Admin C",
+      "email": "admin@example.com",
+      "avatar": "/placeholder.svg",
+      "coverPhoto": "/cover.jpg",
+      "bio": "Quản trị viên hệ thống.",
+      "location": "TP.HCM",
+      "birthday": "1995-03-15",
+      "gender": "female",
+      "role": "admin",
+      "status": "banned",
+      "createdAt": "2023-04-20T08:30:00Z",
+      "friends": [
+        1
+      ],
+      "followers": [],
+      "following": [
+        1
+      ]
+    },
+    {
+      "id": "3",
+      "name": "Lê Thị D",
+      "email": "d@example.com",
+      "avatar": "/placeholder.svg",
+      "role": "user",
+      "status": "active",
+      "createdAt": "2024-01-12T09:00:00Z",
+      "location": "Đà Nẵng",
+      "gender": "female",
+      "bio": "Yêu đời, thích ca hát.",
+      "birthday": "2002-10-05",
+      "friends": [
+        1
+      ],
+      "followers": [],
+      "following": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "5",
+      "name": "Trần Thị F",
+      "email": "f@example.com",
+      "avatar": "/placeholder.svg",
+      "role": "user",
+      "status": "active",
+      "createdAt": "2024-03-01T17:20:00Z",
+      "gender": "female",
+      "bio": "Thích chụp ảnh và du lịch.",
+      "birthday": "1998-07-22",
+      "location": "Huế",
+      "friends": [
+        3,
+        4
+      ],
+      "followers": [],
+      "following": []
+    },
+    {
+      "id": "6",
+      "name": "Ngô Quang G",
+      "email": "g@example.com",
+      "avatar": "/placeholder.svg",
+      "role": "user",
+      "status": "banned",
+      "createdAt": "2023-09-11T10:10:00Z",
+      "gender": "male",
+      "bio": "Backend developer.",
+      "birthday": "1996-12-12",
+      "location": "Nha Trang",
+      "friends": [],
+      "followers": [],
+      "following": []
+    },
+    {
+      "id": "7",
+      "name": "Lương Văn H",
+      "email": "h@example.com",
+      "avatar": "/placeholder.svg",
+      "role": "user",
+      "status": "banned",
+      "createdAt": "2024-01-25T14:30:00Z",
+      "gender": "male",
+      "location": "Hải Phòng",
+      "bio": "Thích bóng đá và phim ảnh.",
+      "birthday": "1999-05-30",
+      "friends": [],
+      "followers": [],
+      "following": []
+    },
+    {
+      "id": "8",
+      "name": "Đặng Thị I",
+      "email": "i@example.com",
+      "avatar": "/placeholder.svg",
+      "role": "user",
+      "status": "active",
+      "createdAt": "2024-02-18T08:00:00Z",
+      "gender": "female",
+      "location": "Biên Hòa",
+      "bio": "Marketing freelancer.",
+      "birthday": "1997-09-14",
+      "friends": [
+        5,
+        6
+      ],
+      "followers": [],
+      "following": [
+        3
+      ]
+    },
+    {
+      "id": "9",
+      "name": "Phùng Quốc K",
+      "email": "k@example.com",
+      "avatar": "/placeholder.svg",
+      "role": "admin",
+      "status": "banned",
+      "createdAt": "2023-10-01T13:50:00Z",
+      "gender": "other",
+      "location": "Quảng Ninh",
+      "bio": "Định hướng AI & Data.",
+      "birthday": "1988-01-01",
+      "friends": [],
+      "followers": [],
+      "following": []
+    },
+    {
+      "id": "10",
+      "name": "Võ Thị L",
+      "email": "l@example.com",
+      "avatar": "/placeholder.svg",
+      "role": "user",
+      "status": "banned",
+      "createdAt": "2024-04-05T11:00:00Z",
+      "gender": "female",
+      "location": "Tây Ninh",
+      "bio": "Yêu thích học hỏi.",
+      "birthday": "2003-04-20",
+      "friends": [
+        3,
+        5
+      ],
+      "followers": [],
+      "following": []
+    },
+    {
+      "id": "4d71",
+      "name": "123123",
+      "email": "213123@gmail.com",
+      "avatar": "/placeholder.svg",
+      "coverPhoto": "",
+      "bio": "123123",
+      "location": "123123",
+      "birthday": "2025-07-09",
+      "gender": "male",
+      "role": "user",
+      "status": "active",
+      "friends": [],
+      "followers": [],
+      "following": [],
+      "createdAt": "2025-07-14T10:23:37.859Z"
+    }
+  ],
+  "posts": [
+    {
+      "id": "2",
+      "author": "Trần Thị B",
+      "authorAvatar": "../../../public/profile-icon-vector.jpg",
+      "content": "Chia sẻ một số kinh nghiệm về việc học lập trình cho những bạn mới bắt đầu. Hãy kiên trì và không ngại thất bại!",
+      "createdAt": "2024-01-14T15:45:00Z",
+      "likes": 189,
+      "comments": 45,
+      "shares": 23,
+      "status": "published",
+      "reports": 0
+    },
+    {
+      "id": "3",
+      "author": "Lê Văn C",
+      "authorAvatar": "../../../public/profile-icon-vector.jpg",
+      "content": "Nội dung không phù hợp và có thể gây tranh cãi...",
+      "createdAt": "2024-01-13T09:20:00Z",
+      "likes": 12,
+      "comments": 8,
+      "shares": 2,
+      "status": "published",
+      "reports": 5
+    },
+    {
+      "id": "4",
+      "author": "Phạm Thị D",
+      "authorAvatar": "../../../public/profile-icon-vector.jpg",
+      "content": "Cuối tuần này có ai muốn đi picnic không? Thời tiết đẹp quá, không đi thì phí!",
+      "image": "../../public/ireland.jpg",
+      "createdAt": "2024-01-12T14:15:00Z",
+      "likes": 67,
+      "comments": 15,
+      "shares": 8,
+      "status": "hidden",
+      "reports": 0
+    },
+    {
+      "id": "5",
+      "author": "Hoàng Văn E",
+      "authorAvatar": "../../../public/profile-icon-vector.jpg",
+      "content": "Bài viết đã bị ẩn do vi phạm quy định cộng đồng.",
+      "createdAt": "2024-01-11T11:00:00Z",
+      "likes": 3,
+      "comments": 1,
+      "shares": 0,
+      "status": "hidden",
+      "reports": 8
+    }
+  ],
+  "reports": [
+    {
+      "id": "1",
+      "author": "Nguyễn Văn A222222",
+      "authorAvatar": "/profile-icon-vector.jpg",
+      "content": "Hôm nay thật là một ngày tuyệt vời! Cảm ơn mọi người đã ủng hộ dự án của tôi. Tôi rất vui khi thấy cộng đồng ngày càng phát triển.",
+      "image": "/placeholder.svg?height=300&width=500",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "likes": 245,
+      "comments": 32,
+      "shares": 18,
+      "status": "published",
+      "reports": 0
+    },
+    {
+      "id": "2",
+      "author": "Trần Thị B",
+      "authorAvatar": "https://i.pravatar.cc/150?img=5",
+      "content": "Chia sẻ một số kinh nghiệm về việc học lập trình cho những bạn mới bắt đầu. Hãy kiên trì và không ngại thất bại!",
+      "image": "../../public/ireland.jpg",
+      "createdAt": "2024-01-14T15:45:00Z",
+      "likes": 189,
+      "comments": 45,
+      "shares": 23,
+      "status": "reported",
+      "reports": 0
+    },
+    {
+      "id": "3",
+      "author": "Lê Văn C",
+      "authorAvatar": "/placeholder.svg?height=40&width=40",
+      "content": "Nội dung không phù hợp và có thể gây tranh cãi...",
+      "createdAt": "2024-01-13T09:20:00Z",
+      "likes": 12,
+      "comments": 8,
+      "shares": 2,
+      "status": "published",
+      "reports": 5
+    },
+    {
+      "id": "4",
+      "author": "Phạm Thị D",
+      "authorAvatar": "/placeholder.svg?height=40&width=40",
+      "content": "Cuối tuần này có ai muốn đi picnic không? Thời tiết đẹp quá, không đi thì phí!",
+      "image": "/placeholder.svg?height=300&width=500",
+      "createdAt": "2024-01-12T14:15:00Z",
+      "likes": 67,
+      "comments": 15,
+      "shares": 8,
+      "status": "reported",
+      "reports": 0
+    },
+    {
+      "id": "5",
+      "author": "Hoàng Văn E",
+      "authorAvatar": "/placeholder.svg?height=40&width=40",
+      "content": "Bài viết đã bị ẩn do vi phạm quy định cộng đồng.",
+      "createdAt": "2024-01-11T11:00:00Z",
+      "likes": 3,
+      "comments": 1,
+      "shares": 0,
+      "status": "reported",
+      "reports": 8
+    },
+    {
+      "id": "66",
+      "author": "Hoàng Văn E66",
+      "authorAvatar": "/placeholder.svg?height=40&width=40",
+      "content": "Bài viết đã bị ẩn do vi phạm quy định cộng đồng.",
+      "createdAt": "2024-01-11T11:00:00Z",
+      "likes": 3,
+      "comments": 1,
+      "shares": 0,
+      "status": "reported",
+      "reports": 8
+    },
+    {
+      "id": "77",
+      "author": "Hoàng Văn 7",
+      "authorAvatar": "/placeholder.svg?height=40&width=40",
+      "content": "Bài viết đã bị ẩn do vi phạm quy định cộng đồng.",
+      "createdAt": "2024-01-11T11:00:00Z",
+      "likes": 3,
+      "comments": 1,
+      "shares": 0,
+      "status": "published",
+      "reports": 8
+    }
+  ],
+  "chartData": {
+    "userGrowth": [
+      {
+        "date": "2024-12-13",
+        "users": 180
+      },
+      {
+        "date": "2024-12-14",
+        "users": 220
+      },
+      {
+        "date": "2024-12-15",
+        "users": 190
+      },
+      {
+        "date": "2024-12-16",
+        "users": 250
+      },
+      {
+        "date": "2024-12-17",
+        "users": 210
+      },
+      {
+        "date": "2024-12-18",
+        "users": 280
+      },
+      {
+        "date": "2024-12-19",
+        "users": 234
+      }
+    ],
+    "postActivity": [
+      {
+        "date": "2024-12-13",
+        "posts": 120
+      },
+      {
+        "date": "2024-12-14",
+        "posts": 145
+      },
+      {
+        "date": "2024-12-15",
+        "posts": 135
+      },
+      {
+        "date": "2024-12-16",
+        "posts": 160
+      },
+      {
+        "date": "2024-12-17",
+        "posts": 155
+      },
+      {
+        "date": "2024-12-18",
+        "posts": 170
+      },
+      {
+        "date": "2024-12-19",
+        "posts": 156
+      }
+    ]
+  }
+}
