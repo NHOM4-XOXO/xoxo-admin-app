@@ -151,10 +151,10 @@ export default function UserManagement() {
                     <div className="text-sm text-gray-500">{user.email}</div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-6 py-4 text-sm text-center">
                   {user.role === "admin" ? "Quản trị viên" : "Người dùng"}
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-6 py-4 text-sm text-center">
                   <span
                     className={`px-2 py-1 text-xs rounded-full font-medium ${
                       user.status === "active"
@@ -165,10 +165,10 @@ export default function UserManagement() {
                     {user.status === "active" ? "Hoạt động" : "Bị cấm"}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
+                <td className="px-6 py-4 text-sm text-gray-600 text-center">
                   {formatDate(user.createdAt)}
                 </td>
-                <td className="px-6 py-4 text-sm space-x-2">
+                <td className="px-6 py-4 text-sm space-x-2 text-center">
                   <button
                   type="button"
                     onClick={() => setSelectedUser(user)}
