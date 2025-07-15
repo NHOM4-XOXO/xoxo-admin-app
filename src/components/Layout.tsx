@@ -10,6 +10,8 @@ import {
   X,
   LogOut,
   User,
+  Bell,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -71,24 +73,34 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div className="flex items-center space-x-4 lg:ml-auto">
+            <div className="flex w-full justify-between">
               <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
+                <div className="flex items-center space-x-3">
+                  <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-gray-500">{user?.role}</p>
+                  </div>
                 </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-900">
-                    {user?.name}
-                  </p>
-                  <p className="text-xs text-gray-500">{user?.role}</p>
-                </div>
+                <button
+                  onClick={logout}
+                  className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                onClick={logout}
-                className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
+              <div className="flex space-x-3">
+                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  <Bell className="w-4 h-4" />
+                </button>
+                <button className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                  <Settings className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </header>

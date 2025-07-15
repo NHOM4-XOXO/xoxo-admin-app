@@ -41,11 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (authData) {
           const { user: savedUser, timestamp } = JSON.parse(authData);
 
-          // Check if session is still valid (24 hours for localStorage, session for sessionStorage)
-          const isValid = savedAuth
-            ? Date.now() - timestamp < 24 * 60 * 60 * 1000
-            : // 24 hours for remember me
-              true; // Session storage is valid until browser closes
+          // TODO: Check if session is still valid (24 hours for localStorage, session for sessionStorage)
+          // const isValid = savedAuth
+          //   ? Date.now() - timestamp < 24 * 60 * 60 * 1000
+          //   : // 24 hours for remember me
+          //     true; // Session storage is valid until browser closes
+
+          // In development , we'll always consider the session valid
+          const isValid = true;
 
           if (isValid && savedUser) {
             setIsAuthenticated(true);
