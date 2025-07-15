@@ -24,7 +24,7 @@ export const postAPI = createApi({
     }),
     getPostById: builder.query<Post, number>({
       query: (id) => `/posts/${id}`,
-      providesTags: (result, error, id) => [{ type: "Post", id }],
+      providesTags: (_, __, id) => [{ type: "Post", id }],
     }),
     updatePost: builder.mutation<Post, Partial<Post> & Pick<Post, "id">>({
       query: ({ id, ...patch }) => ({
@@ -32,14 +32,14 @@ export const postAPI = createApi({
         method: "PATCH",
         body: patch,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Post", id }],
+      invalidatesTags: (_, __, { id }) => [{ type: "Post", id }],
     }),
     deletePost: builder.mutation<{ success: boolean }, number>({
       query: (id) => ({
         url: `/posts/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, id) => [
+      invalidatesTags: (_, __, id) => [
         { type: "Post", id },
         { type: "Post", id: "LIST" },
       ],

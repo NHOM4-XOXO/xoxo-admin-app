@@ -9,7 +9,7 @@ interface AddUserModalProps {
 
 export default function AddUserModal({ onClose }: AddUserModalProps) {
   const [createUser, { isLoading }] = useCreateUserMutation();
-  const [formData, setFormData] = useState<Omit<User, "id" | "createdAt">>({
+  const [formData, setFormData] = useState<Omit<User, "id">>({
     name: "",
     email: "",
     avatar: "/placeholder.svg",
@@ -23,6 +23,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
     friends: [],
     followers: [],
     following: [],
+    createdAt: new Date().toISOString(),
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
