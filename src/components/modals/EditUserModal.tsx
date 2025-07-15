@@ -1,27 +1,32 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import type { UserType } from "../../types/User.type";
+import { useUpdateUserMutation } from "../../store/api";
 
 
 interface EditUserModalProps {
   user: UserType;
   onClose: () => void;
-  onSave: (updatedUser: UserType) => void;
 }
 
-export default function EditUserModal({ user, onClose, onSave }: EditUserModalProps) {
+export default function EditUserModal({ user, onClose }: EditUserModalProps) {
   const [formData, setFormData] = useState<UserType>({ ...user });
-  
+  const [updateUser, { isLoading }] = useUpdateUserMutation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    try {
+      const { id, ...patch } = formData;
+      await updateUser({ id, ...patch }).unwrap();
+      onClose();
+    } catch (error) {
+      console.error("Cập nhật thất bại:", error);
+    }
   };
 
   return (
@@ -138,9 +143,10 @@ export default function EditUserModal({ user, onClose, onSave }: EditUserModalPr
         <div className="flex justify-end mt-6">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
+            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            disabled={isLoading}
           >
-            Lưu
+            {isLoading ? "Đang lưu..." : "Lưu"}
           </button>
         </div>
       </form>

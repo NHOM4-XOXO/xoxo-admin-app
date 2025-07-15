@@ -231,15 +231,6 @@ export default function UserManagement() {
         <EditUserModal
           user={editingUser}
           onClose={() => setEditingUser(null)}
-          onSave={async (updatedUser) => {
-            try {
-              const { id, ...patch } = updatedUser;
-              await updateUser({ id, ...patch }).unwrap();
-              setEditingUser(null);
-            } catch (error) {
-              console.error("Cập nhật thất bại:", error);
-            }
-          }}
         />
       )}
     </div>
