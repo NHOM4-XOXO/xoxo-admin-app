@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, dev, staging ]
+    branches: [ main, dev, staging, 'feature/setup-cicd' ]
   pull_request:
     branches: [ main, dev ]
 
@@ -58,4 +58,17 @@ jobs:
         echo "🚀 Deploying to PRODUCTION environment"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
-        echo "⚠️  Production deployment từ main branch" 
+        echo "⚠️  Production deployment từ main branch"
+
+  test-feature:
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: github.ref == 'refs/heads/feature/setup-cicd'
+    
+    steps:
+    - name: Test Feature Branch
+      run: |
+        echo "🧪 Testing CI/CD setup trên feature branch"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "✅ Feature branch CI/CD test thành công!" 
