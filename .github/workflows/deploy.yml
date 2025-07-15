@@ -32,7 +32,6 @@ jobs:
     - name: Test build artifacts
       run: |
         ls -la dist/
-        ls -la data/
         echo "✅ Build successful!"
 
   deploy-staging:
