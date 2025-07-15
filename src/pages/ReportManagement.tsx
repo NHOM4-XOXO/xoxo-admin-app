@@ -13,7 +13,6 @@ import {
 import {
   useGetReportsQuery,
   useUpdateReportMutation,
-  
 } from "../api/reportApi.ts";
 import Pagination from "../components/Pagination";
 import type { Report } from "../types/Report.type.ts";
@@ -33,26 +32,28 @@ export default function ReportManagement() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
-  const currentReports = filteredReports.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const totalPages = Math.ceil(reports.length / itemsPerPage);
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
-    setFilteredReports(
-      reports.filter((report) => {
-        const matchesSearch =
-          report.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.content.toLowerCase().includes(searchTerm.toLowerCase());
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    const endIdx = currentPage * itemsPerPage;
 
-        const matchesStatus =
-          statusFilter === "all" || report.status === statusFilter;
-        return matchesSearch && matchesStatus;
-      })
-    );
-  }, [reports, searchTerm, statusFilter]);
+    const pageReports = reports.slice(startIdx, endIdx);
+
+    const filtered = pageReports.filter((report) => {
+      const matchesSearch =
+        report.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        report.content.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" || report.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+
+    setFilteredReports(filtered);
+  }, [reports, searchTerm, statusFilter, currentPage]);
 
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
@@ -256,7 +257,7 @@ export default function ReportManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentReports.map((report) => (
+              {filteredReports.map((report) => (
                 <tr key={report.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
