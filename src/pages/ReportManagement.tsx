@@ -21,7 +21,6 @@ export default function ReportManagement() {
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
@@ -39,7 +38,7 @@ export default function ReportManagement() {
         return matchesSearch && matchesStatus;
       })
     );
-  }, [reports, searchTerm, statusFilter, typeFilter]);
+  }, [reports, searchTerm, statusFilter]);
 
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
