@@ -4,7 +4,7 @@ import type { Activity, ChartData, Stats, TopPost } from "../types/Dashboard.typ
 export const dashboardApi = createApi({
   reducerPath: "dashboard",
   baseQuery: fetchBaseQuery({
-    baseUrl: "/api", // Use proxy instead of direct localhost:3001
+    baseUrl: "https://mock-api-json-sever-2f7e912c356a.herokuapp.com",
   }),
   tagTypes: ["Stats", "Activities", "TopPosts", "ChartData"],
   keepUnusedDataFor: 60, // Keep data for 60 seconds

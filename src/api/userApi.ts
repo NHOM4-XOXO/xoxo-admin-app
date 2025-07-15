@@ -4,7 +4,7 @@ import type { User } from "../types/User.type";
 export const userAPI = createApi({
   reducerPath: "user",
   baseQuery: fetchBaseQuery({
-    baseUrl: "/api", // Use proxy instead of direct localhost:3001
+    baseUrl: "https://mock-api-json-sever-2f7e912c356a.herokuapp.com",
   }),
   tagTypes: ["User"],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
