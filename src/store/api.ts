@@ -95,9 +95,13 @@ export interface ChartData {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3001', // JSON Server default port
+    baseUrl: '/api', // Use proxy instead of direct localhost:3001
   }),
-  tagTypes: ['Stats', 'Activities', 'TopPosts', 'Users', 'Posts', 'Reports', 'ChartData'],
+  tagTypes: ['Stats', 'Activities', 'TopPosts', 'User', 'Post', 'Report', 'ChartData'],
+  keepUnusedDataFor: 60, // Keep data for 60 seconds
+  refetchOnMountOrArgChange: false, // Don't refetch on mount
+  refetchOnFocus: false, // Don't refetch on window focus
+  refetchOnReconnect: false, // Don't refetch on reconnect
   endpoints: (builder) => ({
     // Dashboard endpoints
     getStats: builder.query<Stats, void>({
@@ -120,11 +124,17 @@ export const apiSlice = createApi({
     // User management endpoints
     getUsers: builder.query<User[], void>({
       query: () => '/users',
-      providesTags: ['Users'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'User' as const, id })),
+              { type: 'User', id: 'LIST' },
+            ]
+          : [{ type: 'User', id: 'LIST' }],
     }),
     getUserById: builder.query<User, number>({
       query: (id) => `/users/${id}`,
-      providesTags: ['Users'],
+      providesTags: (result, error, id) => [{ type: 'User', id }],
     }),
     updateUser: builder.mutation<User, Partial<User> & Pick<User, 'id'>>({
       query: ({ id, ...patch }) => ({
@@ -132,14 +142,19 @@ export const apiSlice = createApi({
         method: 'PATCH',
         body: patch,
       }),
-      invalidatesTags: ['Users', 'Stats'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'User', id },
+      ],
     }),
     deleteUser: builder.mutation<{ success: boolean }, number>({
       query: (id) => ({
         url: `/users/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Users', 'Stats'],
+      invalidatesTags: (result, error, id) => [
+        { type: 'User', id },
+        { type: 'User', id: 'LIST' },
+      ],
     }),
     createUser: builder.mutation<User, Omit<User, 'id'>>({
       query: (user) => ({
@@ -150,17 +165,23 @@ export const apiSlice = createApi({
           createdAt: new Date().toISOString(),
         },
       }),
-      invalidatesTags: ['Users', 'Stats'],
+      invalidatesTags: [{ type: 'User', id: 'LIST' }],
     }),
     
     // Post management endpoints
     getPosts: builder.query<Post[], void>({
       query: () => '/posts',
-      providesTags: ['Posts'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Post' as const, id })),
+              { type: 'Post', id: 'LIST' },
+            ]
+          : [{ type: 'Post', id: 'LIST' }],
     }),
     getPostById: builder.query<Post, number>({
       query: (id) => `/posts/${id}`,
-      providesTags: ['Posts'],
+      providesTags: (result, error, id) => [{ type: 'Post', id }],
     }),
     updatePost: builder.mutation<Post, Partial<Post> & Pick<Post, 'id'>>({
       query: ({ id, ...patch }) => ({
@@ -168,14 +189,19 @@ export const apiSlice = createApi({
         method: 'PATCH',
         body: patch,
       }),
-      invalidatesTags: ['Posts', 'Stats', 'TopPosts'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Post', id },
+      ],
     }),
     deletePost: builder.mutation<{ success: boolean }, number>({
       query: (id) => ({
         url: `/posts/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Posts', 'Stats', 'TopPosts'],
+      invalidatesTags: (result, error, id) => [
+        { type: 'Post', id },
+        { type: 'Post', id: 'LIST' },
+      ],
     }),
     createPost: builder.mutation<Post, Omit<Post, 'id'>>({
       query: (post) => ({
@@ -186,13 +212,19 @@ export const apiSlice = createApi({
           createdAt: new Date().toISOString(),
         },
       }),
-      invalidatesTags: ['Posts', 'Stats', 'TopPosts'],
+      invalidatesTags: [{ type: 'Post', id: 'LIST' }],
     }),
     
     // Report management endpoints (posts that need moderation)
     getReports: builder.query<Report[], void>({
       query: () => '/reports',
-      providesTags: ['Reports'],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Report' as const, id })),
+              { type: 'Report', id: 'LIST' },
+            ]
+          : [{ type: 'Report', id: 'LIST' }],
     }),
     updateReport: builder.mutation<Report, Partial<Report> & Pick<Report, 'id'>>({
       query: ({ id, ...patch }) => ({
@@ -200,7 +232,9 @@ export const apiSlice = createApi({
         method: 'PATCH',
         body: patch,
       }),
-      invalidatesTags: ['Reports', 'Stats'],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Report', id },
+      ],
     }),
     
     // Real-time updates
