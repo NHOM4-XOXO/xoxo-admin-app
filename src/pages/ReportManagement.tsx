@@ -1,184 +1,83 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
-  Filter,
   Eye,
   Check,
   X,
   AlertTriangle,
   Clock,
+  Loader2,
+  ShieldAlert,
+  UserX,
 } from "lucide-react";
-
-interface Report {
-  id: number;
-  type: "spam" | "inappropriate" | "harassment" | "fake" | "other";
-  reporter: string;
-  reporterAvatar: string;
-  targetType: "post" | "comment" | "user";
-  targetId: number;
-  targetContent: string;
-  targetAuthor: string;
-  reason: string;
-  createdAt: string;
-  status: "pending" | "reviewing" | "resolved" | "dismissed";
-  priority: "low" | "medium" | "high";
-}
-
-const mockReports: Report[] = [
-  {
-    id: 1,
-    type: "spam",
-    reporter: "Nguyễn Văn A",
-    reporterAvatar: "/placeholder.svg?height=40&width=40",
-    targetType: "post",
-    targetId: 123,
-    targetContent:
-      "Quảng cáo sản phẩm không rõ nguồn gốc, có thể là lừa đảo...",
-    targetAuthor: "Tài khoản spam",
-    reason: "Bài viết này là spam quảng cáo",
-    createdAt: "2024-01-15T10:30:00Z",
-    status: "pending",
-    priority: "high",
-  },
-  {
-    id: 2,
-    type: "inappropriate",
-    reporter: "Trần Thị B",
-    reporterAvatar: "/placeholder.svg?height=40&width=40",
-    targetType: "comment",
-    targetId: 456,
-    targetContent: "Nội dung không phù hợp với cộng đồng...",
-    targetAuthor: "User123",
-    reason: "Nội dung không phù hợp",
-    createdAt: "2024-01-14T15:45:00Z",
-    status: "reviewing",
-    priority: "medium",
-  },
-  {
-    id: 3,
-    type: "harassment",
-    reporter: "Lê Văn C",
-    reporterAvatar: "/placeholder.svg?height=40&width=40",
-    targetType: "user",
-    targetId: 789,
-    targetContent: "Người dùng này liên tục quấy rối tôi",
-    targetAuthor: "BadUser",
-    reason: "Quấy rối và bắt nạt",
-    createdAt: "2024-01-13T09:20:00Z",
-    status: "resolved",
-    priority: "high",
-  },
-  {
-    id: 4,
-    type: "fake",
-    reporter: "Phạm Thị D",
-    reporterAvatar: "/placeholder.svg?height=40&width=40",
-    targetType: "post",
-    targetId: 101,
-    targetContent: "Tin tức giả mạo về sự kiện chính trị...",
-    targetAuthor: "FakeNews",
-    reason: "Thông tin sai lệch",
-    createdAt: "2024-01-12T14:15:00Z",
-    status: "dismissed",
-    priority: "low",
-  },
-  {
-    id: 5,
-    type: "other",
-    reporter: "Hoàng Văn E",
-    reporterAvatar: "/placeholder.svg?height=40&width=40",
-    targetType: "comment",
-    targetId: 202,
-    targetContent: "Vi phạm quy định khác của cộng đồng",
-    targetAuthor: "Violator",
-    reason: "Vi phạm quy định cộng đồng",
-    createdAt: "2024-01-11T11:00:00Z",
-    status: "pending",
-    priority: "medium",
-  },
-];
+import {
+  useGetReportsQuery,
+  useUpdateReportMutation,
+  type Report,
+} from "../store/api";
 
 export default function ReportManagement() {
-  const [reports, setReports] = useState<Report[]>(mockReports);
+  // Redux hooks for data fetching and mutations
+  const { data: reports = [], isLoading, error } = useGetReportsQuery();
+  const [updateReport, { isLoading: isUpdating }] = useUpdateReportMutation();
+
+  // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "pending" | "reviewing" | "resolved" | "dismissed"
-  >("all");
-  const [typeFilter, setTypeFilter] = useState<
-    "all" | "spam" | "inappropriate" | "harassment" | "fake" | "other"
-  >("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
 
-  const filteredReports = reports.filter((report) => {
-    const matchesSearch =
-      report.reporter.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.targetContent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.reason.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || report.status === statusFilter;
-    const matchesType = typeFilter === "all" || report.type === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  // Filter reports based on search and filter criteria
+  useEffect(() => {
+    setFilteredReports(
+      reports.filter((report) => {
+        const matchesSearch =
+          report.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          report.content.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesStatus =
+          statusFilter === "all" || report.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+    );
+  }, [reports, searchTerm, statusFilter, typeFilter]);
 
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
-      case "pending":
+      case "published":
         return (
-          <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-            Chờ xử lý
-          </span>
-        );
-      case "reviewing":
-        return (
-          <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-            Đang xem xét
-          </span>
-        );
-      case "resolved":
-        return (
-          <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
             Đã xử lý
           </span>
         );
-      case "dismissed":
+      case "hidden":
         return (
-          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-            Đã bỏ qua
+          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+            Chờ xử lý
+          </span>
+        );
+      case "reported":
+        return (
+          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+            Vi phạm
           </span>
         );
     }
   };
 
-  const getTypeBadge = (type: Report["type"]) => {
-    const typeMap = {
-      spam: { label: "Spam", color: "bg-red-100 text-red-800" },
-      inappropriate: {
-        label: "Không phù hợp",
-        color: "bg-orange-100 text-orange-800",
-      },
-      harassment: { label: "Quấy rối", color: "bg-purple-100 text-purple-800" },
-      fake: { label: "Tin giả", color: "bg-pink-100 text-pink-800" },
-      other: { label: "Khác", color: "bg-gray-100 text-gray-800" },
-    };
-    const typeInfo = typeMap[type];
-    return (
-      <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${typeInfo.color}`}
-      >
-        {typeInfo.label}
-      </span>
-    );
-  };
-
-  const getPriorityIcon = (priority: Report["priority"]) => {
-    switch (priority) {
-      case "high":
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case "medium":
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case "low":
-        return <AlertTriangle className="h-4 w-4 text-green-500" />;
+  const handleStatusChange = async (
+    reportId: number,
+    newStatus: Report["status"]
+  ) => {
+    try {
+      await updateReport({
+        id: reportId,
+        status: newStatus,
+      }).unwrap();
+    } catch (error) {
+      console.error("Failed to update report status:", error);
     }
   };
 
@@ -191,93 +90,111 @@ export default function ReportManagement() {
     return new Date(dateString).toLocaleString("vi-VN");
   };
 
-  //Để tạm sau này kết nối với API
-  useEffect(() => {
-    fetch("/api/reports")
-      .then((res) => res.json())
-      .then((data) => setReports(data));
-  }, []);
-
-  //  const handleStatusChange = (
-  //    reportId: number,
-  //    newStatus: Report["status"]
-  //  ) => {
-  //    setReports(
-  //      reports.map((report) =>
-  //        report.id === reportId ? { ...report, status: newStatus } : report
-  //      )
-  //    );
-  //  };
-  const handleStatusChange = async (
-    reportId: number,
-    newStatus: Report["status"]
-  ) => {
-    await fetch(`/api/reports/${reportId}/status`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-
-    setReports((prev) =>
-      prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r))
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
     );
-  };
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600 py-8">
+        <p>Có lỗi xảy ra khi tải dữ liệu báo cáo</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Quản lý báo cáo</h1>
-        <p className="text-gray-600">Xử lý các báo cáo vi phạm từ người dùng</p>
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý báo cáo</h1>
+          <p className="text-gray-600">
+            Xử lý các báo cáo vi phạm từ người dùng
+          </p>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo người báo cáo, nội dung hoặc lý do..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <ShieldAlert className="w-8 h-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Tổng báo cáo</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {reports.length}
+              </p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="h-5 w-5 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="pending">Chờ xử lý</option>
-                <option value="reviewing">Đang xem xét</option>
-                <option value="resolved">Đã xử lý</option>
-                <option value="dismissed">Đã bỏ qua</option>
-              </select>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <Clock className="w-8 h-8 text-yellow-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {reports.filter((r) => r.status === "hidden").length}
+              </p>
             </div>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as any)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">Tất cả loại</option>
-              <option value="spam">Spam</option>
-              <option value="inappropriate">Không phù hợp</option>
-              <option value="harassment">Quấy rối</option>
-              <option value="fake">Tin giả</option>
-              <option value="other">Khác</option>
-            </select>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <Check className="w-8 h-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Đã xử lý</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {reports.filter((r) => r.status === "published").length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <UserX className="w-8 h-8 text-red-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Vi phạm</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {reports.filter((r) => r.status === "reported").length}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo người báo cáo hoặc nội dung..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="hidden">Chờ xử lý</option>
+            <option value="published">Đã xử lý</option>
+            <option value="reported">Vi phạm</option>
+          </select>
+        </div>
+      </div>
+
       {/* Reports Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -286,10 +203,7 @@ export default function ReportManagement() {
                   Báo cáo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Loại
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Đối tượng
+                  Nội dung
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
@@ -297,8 +211,11 @@ export default function ReportManagement() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thời gian
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hành động
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tương tác
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Thao tác
                 </th>
               </tr>
             </thead>
@@ -309,40 +226,22 @@ export default function ReportManagement() {
                     <div className="flex items-start space-x-3">
                       <img
                         className="h-10 w-10 rounded-full flex-shrink-0"
-                        src={report.reporterAvatar || "/placeholder.svg"}
-                        alt={report.reporter}
+                        src={report.authorAvatar || "/placeholder.svg"}
+                        alt={report.author}
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <div className="text-sm font-medium text-gray-900">
-                            {report.reporter}
-                          </div>
-                          {getPriorityIcon(report.priority)}
+                        <div className="text-sm font-medium text-gray-900">
+                          {report.author}
                         </div>
                         <div className="text-sm text-gray-600 line-clamp-2 mt-1">
-                          {report.reason}
+                          Báo cáo từ người dùng
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getTypeBadge(report.type)}
-                  </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">
-                      <div className="font-medium">
-                        {report.targetType === "post"
-                          ? "Bài viết"
-                          : report.targetType === "comment"
-                          ? "Bình luận"
-                          : "Người dùng"}
-                      </div>
-                      <div className="text-gray-600">
-                        bởi {report.targetAuthor}
-                      </div>
-                      <div className="text-xs text-gray-500 line-clamp-1 mt-1">
-                        {report.targetContent}
-                      </div>
+                    <div className="text-sm text-gray-900 line-clamp-3">
+                      {report.content}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -351,65 +250,46 @@ export default function ReportManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(report.createdAt)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <span className="flex items-center">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          {report.reports} báo cáo
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
                       <button
                         onClick={() => viewReportDetails(report)}
-                        className="text-blue-600 hover:text-blue-900 p-1"
+                        className="text-blue-600 hover:text-blue-900"
                         title="Xem chi tiết"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="w-4 h-4" />
                       </button>
-                      {report.status === "pending" && (
+                      {report.status === "hidden" && (
                         <>
                           <button
                             onClick={() =>
-                              handleStatusChange(report.id, "reviewing")
+                              handleStatusChange(report.id, "published")
                             }
-                            className="text-blue-600 hover:text-blue-900 p-1"
-                            title="Xem xét"
-                          >
-                            <Clock className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(report.id, "resolved")
-                            }
-                            className="text-green-600 hover:text-green-900 p-1"
+                            disabled={isUpdating}
+                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
                             title="Đánh dấu đã xử lý"
                           >
-                            <Check className="h-4 w-4" />
+                            <Check className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() =>
-                              handleStatusChange(report.id, "dismissed")
+                              handleStatusChange(report.id, "reported")
                             }
-                            className="text-gray-600 hover:text-gray-900 p-1"
-                            title="Bỏ qua"
+                            disabled={isUpdating}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                            title="Đánh dấu vi phạm"
                           >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
-                      {report.status === "reviewing" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(report.id, "resolved")
-                            }
-                            className="text-green-600 hover:text-green-900 p-1"
-                            title="Đánh dấu đã xử lý"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusChange(report.id, "dismissed")
-                            }
-                            className="text-gray-600 hover:text-gray-900 p-1"
-                            title="Bỏ qua"
-                          >
-                            <X className="h-4 w-4" />
+                            <X className="w-4 h-4" />
                           </button>
                         </>
                       )}
@@ -420,11 +300,23 @@ export default function ReportManagement() {
             </tbody>
           </table>
         </div>
+
+        {filteredReports.length === 0 && (
+          <div className="text-center py-12">
+            <ShieldAlert className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              Không có báo cáo
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Không tìm thấy báo cáo nào phù hợp với tiêu chí tìm kiếm.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Report Details Modal */}
       {showReportModal && selectedReport && (
-        <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
@@ -443,12 +335,12 @@ export default function ReportManagement() {
                   <div className="flex items-center space-x-3">
                     <img
                       className="h-12 w-12 rounded-full"
-                      src={selectedReport.reporterAvatar || "/placeholder.svg"}
-                      alt={selectedReport.reporter}
+                      src={selectedReport.authorAvatar || "/placeholder.svg"}
+                      alt={selectedReport.author}
                     />
                     <div>
                       <h4 className="text-lg font-medium">
-                        {selectedReport.reporter}
+                        {selectedReport.author}
                       </h4>
                       <p className="text-sm text-gray-500">
                         {formatDate(selectedReport.createdAt)}
@@ -456,88 +348,74 @@ export default function ReportManagement() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {getPriorityIcon(selectedReport.priority)}
                     {getStatusBadge(selectedReport.status)}
                   </div>
                 </div>
 
                 <div className="border-t pt-4">
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">
-                        Loại báo cáo:
-                      </span>
-                      <div className="mt-1">
-                        {getTypeBadge(selectedReport.type)}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">
-                        Đối tượng:
-                      </span>
-                      <p className="mt-1 text-sm text-gray-900">
-                        {selectedReport.targetType === "post"
-                          ? "Bài viết"
-                          : selectedReport.targetType === "comment"
-                          ? "Bình luận"
-                          : "Người dùng"}
-                        bởi {selectedReport.targetAuthor}
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="mb-4">
                     <span className="text-sm font-medium text-gray-500">
-                      Lý do báo cáo:
-                    </span>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {selectedReport.reason}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">
-                      Nội dung bị báo cáo:
+                      Nội dung được báo cáo:
                     </span>
                     <div className="mt-1 p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm text-gray-900">
-                        {selectedReport.targetContent}
+                        {selectedReport.content}
                       </p>
+                      {selectedReport.image && (
+                        <img
+                          className="mt-2 max-w-xs h-auto rounded"
+                          src={selectedReport.image}
+                          alt="Reported content"
+                        />
+                      )}
                     </div>
+                  </div>
+
+                  <div className="border-t pt-4 flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center space-x-6">
+                      <span className="flex items-center">
+                        <AlertTriangle className="h-4 w-4 mr-1" />
+                        {selectedReport.likes} lượt thích
+                      </span>
+                      <span className="flex items-center">
+                        {selectedReport.comments} bình luận
+                      </span>
+                      <span className="flex items-center">
+                        {selectedReport.shares} chia sẻ
+                      </span>
+                    </div>
+                    {selectedReport.reports > 0 && (
+                      <span className="text-red-600 font-medium">
+                        {selectedReport.reports} báo cáo
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {selectedReport.status === "pending" && (
-                  <div className="border-t pt-4 flex justify-end space-x-3">
+                <div className="border-t pt-4 flex justify-end space-x-3">
+                  {selectedReport.status !== "reported" && (
                     <button
                       onClick={() => {
-                        handleStatusChange(selectedReport.id, "dismissed");
+                        handleStatusChange(selectedReport.id, "reported");
                         setShowReportModal(false);
                       }}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
                     >
-                      Bỏ qua
+                      Đánh dấu vi phạm
                     </button>
+                  )}
+                  {selectedReport.status !== "published" && (
                     <button
                       onClick={() => {
-                        handleStatusChange(selectedReport.id, "reviewing");
-                        setShowReportModal(false);
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
-                    >
-                      Bắt đầu xem xét
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleStatusChange(selectedReport.id, "resolved");
+                        handleStatusChange(selectedReport.id, "published");
                         setShowReportModal(false);
                       }}
                       className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700"
                     >
                       Đánh dấu đã xử lý
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
