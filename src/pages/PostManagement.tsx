@@ -13,11 +13,11 @@ import {
   EyeOff,
 } from "lucide-react";
 import {
+  useDeletePostMutation,
   useGetPostsQuery,
   useUpdatePostMutation,
-  useDeletePostMutation,
-  type Post,
-} from "../store/api";
+} from "../api/postAPI";
+import type { Post } from "../types/Post.type";
 
 export default function PostManagement() {
   // Redux hooks for data fetching and mutations
@@ -369,7 +369,7 @@ export default function PostManagement() {
 
       {/* Delete Confirmation Modal */}
       {postToDelete && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3 text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -404,7 +404,7 @@ export default function PostManagement() {
 
       {/* Post Details Modal */}
       {showPostModal && selectedPost && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">

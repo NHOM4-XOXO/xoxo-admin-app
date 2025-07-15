@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
-import { useCreateUserMutation, type User } from "../../store/api";
+import { useCreateUserMutation } from "../../api/userApi";
+import type { User } from "../../types/User.type";
 
 interface AddUserModalProps {
   onClose: () => void;
