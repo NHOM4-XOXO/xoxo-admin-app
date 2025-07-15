@@ -8,8 +8,13 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "json-server": "json-server --watch db.json --port 3001",
-    "dev:full": "concurrently \"npm run json-server\" \"npm run dev\""
+    "json-server": "json-server --port 3001 ../json-server-data/db.json",
+    "json-server:stable": "json-server --port 3001 ../json-server-data/db.json",
+    "dev:full": "concurrently \"npm run json-server:stable\" \"npm run dev\"",
+    "start:api": "npm run json-server:stable",
+    "start:dev": "npm run dev",
+    "setup:data": "copy db.json ../json-server-data/db.json",
+    "sync:data": "copy ../json-server-data/db.json db.json"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
