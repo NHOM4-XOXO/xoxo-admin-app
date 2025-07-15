@@ -31,7 +31,7 @@ export const reportApi = createApi({
         method: "PATCH",
         body: patch,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Report", id }],
+      invalidatesTags: (_, __, { id }) => [{ type: "Report", id }],
     }),
   }),
 });

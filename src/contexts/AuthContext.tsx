@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const authData = savedAuth || sessionAuth;
 
         if (authData) {
-          const { user: savedUser, timestamp } = JSON.parse(authData);
+          const { user: savedUser } = JSON.parse(authData);
 
           // TODO: Check if session is still valid (24 hours for localStorage, session for sessionStorage)
           // const isValid = savedAuth
@@ -120,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
