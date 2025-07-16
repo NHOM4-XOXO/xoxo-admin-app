@@ -35,6 +35,7 @@ export default function UserManagement() {
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [pageSize, setPageSize] = useState(5);
   
   // const { data: users = [], isLoading, error } = useGetUsersPaginatedQuery({
@@ -42,19 +43,23 @@ export default function UserManagement() {
   // limit: pageSize,
   // });
   
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    const matchesStatus =
-      statusFilter === "all" || user.status === statusFilter;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+   useEffect(() => {
+     setFilteredUsers(
+       users.filter((user) => {
+         const matchesSearch =
+           user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+         const matchesStatus =
+           statusFilter === "all" || user.status === statusFilter;
+         return matchesSearch && matchesStatus;
+       })
+     );
+   }, [users, searchTerm, statusFilter]);
 
   useEffect(()=>{
     setCurrentPage(1);
-  },[statusFilter, roleFilter])
+  },[statusFilter, roleFilter, searchTerm])
 
   
   {
@@ -317,17 +322,17 @@ export default function UserManagement() {
           onClose={() => setEditingUser(null)}
         />
       )}
-
+      
       {filteredUsers.length > 0 && (
         <CustomPagination
           currentPage={currentPage}
           pageSize={pageSize}
-          total={users.length}
+          total={filteredUsers.length}
           onChange={(page, size) => {
             setCurrentPage(page);
             setPageSize(size);
           }}
-          simple
+          
         />
       )}
     </div>

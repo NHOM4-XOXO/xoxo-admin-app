@@ -18,6 +18,7 @@ import {
   useUpdatePostMutation,
 } from "../api/postAPI";
 import type { Post } from "../types/Post.type";
+import CustomPagination from "../components/CustomPagination";
 
 export default function PostManagement() {
   // Redux hooks for data fetching and mutations
@@ -33,6 +34,17 @@ export default function PostManagement() {
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
 
+  //Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm]);
   // Filter posts based on search and filter criteria
   useEffect(() => {
     setFilteredPosts(
@@ -246,7 +258,7 @@ export default function PostManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredPosts.map((post) => (
+              {paginatedPosts.map((post) => (
                 <tr key={post.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
@@ -473,6 +485,16 @@ export default function PostManagement() {
           </div>
         </div>
       )}
+      {/* Pagination */}
+      <CustomPagination
+        currentPage={currentPage}
+        pageSize={pageSize}
+        total={filteredPosts.length}
+        onChange={(page, pageSize) => {
+          setCurrentPage(page);
+          setPageSize(pageSize);
+        }}
+      />
     </div>
   );
 }
