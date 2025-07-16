@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Eye,
   Ban,
@@ -14,15 +14,19 @@ import AddUserModal from "../components/modals/AddUserModal";
 import ConfirmModal from "../components/modals/ConfirmModal";
 import UserDetailModal from "../components/modals/UserDetailModal";
 import EditUserModal from "../components/modals/EditUserModal";
-import { useDeleteUserMutation, useGetUsersQuery, useUpdateUserMutation } from "../api/userApi";
+import {
+  useDeleteUserMutation,
+  // useGetUsersPaginatedQuery,
+  useGetUsersQuery,
+  useUpdateUserMutation,
+} from "../api/userApi";
 import type { User as UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 
 export default function UserManagement() {
-  const { data: users = [], isLoading, error } = useGetUsersQuery();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-
+  const { data: users = [], isLoading, error } = useGetUsersQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -30,9 +34,14 @@ export default function UserManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
-
+  
+  // const { data: users = [], isLoading, error } = useGetUsersPaginatedQuery({
+  // page:currentPage,
+  // limit: pageSize,
+  // });
+  
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -43,12 +52,19 @@ export default function UserManagement() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  useEffect(()=>{
+    setCurrentPage(1);
+  },[statusFilter, roleFilter])
+
+  
   {
     /* config pagination */
   }
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  
 
   const toggleStatus = async (userId: number) => {
     const user = users.find((u) => u.id === userId);
@@ -306,7 +322,7 @@ export default function UserManagement() {
         <CustomPagination
           currentPage={currentPage}
           pageSize={pageSize}
-          total={filteredUsers.length}
+          total={users.length}
           onChange={(page, size) => {
             setCurrentPage(page);
             setPageSize(size);
