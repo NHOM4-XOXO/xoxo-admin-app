@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, dev, staging, 'feature/setup-cicd' ]
+    branches: [ main, dev, staging ]
   pull_request:
     branches: [ main, dev ]
 
