@@ -13,9 +13,8 @@ import {
 import {
   useGetReportsQuery,
   useUpdateReportMutation,
-  
 } from "../api/reportApi.ts";
-import Pagination from "../components/Pagination";
+import CustomPagination from "../components/CustomPagination.tsx";
 import type { Report } from "../types/Report.type.ts";
 
 export default function ReportManagement() {
@@ -29,15 +28,8 @@ export default function ReportManagement() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
-
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
-  const currentReports = filteredReports.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const [pageSize, setPageSize] = useState(5);
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
@@ -53,6 +45,10 @@ export default function ReportManagement() {
       })
     );
   }, [reports, searchTerm, statusFilter]);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedReports = filteredReports.slice(startIndex, endIndex);
 
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
@@ -256,7 +252,7 @@ export default function ReportManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {currentReports.map((report) => (
+              {paginatedReports.map((report) => (
                 <tr key={report.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
@@ -458,13 +454,16 @@ export default function ReportManagement() {
         </div>
       )}
       {/* Call Components Pagination */}
-      <div className="flex justify-center p-4">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
-      </div>
+
+      <CustomPagination
+        currentPage={currentPage}
+        pageSize={pageSize}
+        total={filteredReports.length}
+        onChange={(page, pageSize) => {
+          setCurrentPage(page);
+          setPageSize(pageSize);
+        }}
+      />
     </div>
   );
 }

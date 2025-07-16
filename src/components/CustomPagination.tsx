@@ -1,5 +1,6 @@
 import { Pagination } from "antd";
 
+
 interface CustomPaginationProps {
   currentPage: number;
   pageSize: number;
@@ -7,7 +8,6 @@ interface CustomPaginationProps {
   onChange: (page: number, pageSize: number) => void;
   showSizeChanger?: boolean;
   showQuickJumper?: boolean;
-  simple?: boolean;
   className?: string;
 }
 
@@ -18,18 +18,18 @@ export default function CustomPagination({
   onChange,
   showSizeChanger = true,
   // showQuickJumper = false,
-  simple = false,
+  
   className = "",
 }: CustomPaginationProps) {
   return (
-    <div className={`flex justify-end p-4 ${className}`}>
+    <div className={`flex justify-center p-4 ${className}`}>
       <Pagination
         current={currentPage}
         pageSize={pageSize}
         total={total}
         showSizeChanger={showSizeChanger}
         // showQuickJumper={showQuickJumper}
-        simple={simple}
+        showQuickJumper
         pageSizeOptions={["5", "10", "20", "50"]}
         onChange={onChange}
       />
