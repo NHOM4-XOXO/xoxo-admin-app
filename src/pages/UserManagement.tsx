@@ -1,17 +1,32 @@
-import { useState } from "react";
-import { Eye, Ban, Trash2, Loader2, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Eye,
+  Ban,
+  Trash2,
+  Loader2,
+  Plus,
+  Users,
+  UserCheck,
+  UserX,
+  ShieldCheck,
+} from "lucide-react";
 import AddUserModal from "../components/modals/AddUserModal";
 import ConfirmModal from "../components/modals/ConfirmModal";
 import UserDetailModal from "../components/modals/UserDetailModal";
 import EditUserModal from "../components/modals/EditUserModal";
-import { useDeleteUserMutation, useGetUsersQuery, useUpdateUserMutation } from "../api/userApi";
+import {
+  useDeleteUserMutation,
+  // useGetUsersPaginatedQuery,
+  useGetUsersQuery,
+  useUpdateUserMutation,
+} from "../api/userApi";
 import type { User as UserType } from "../types/User.type";
+import CustomPagination from "../components/CustomPagination";
 
 export default function UserManagement() {
-  const { data: users = [], isLoading, error } = useGetUsersQuery();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-
+  const { data: users = [], isLoading, error } = useGetUsersQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -19,7 +34,14 @@ export default function UserManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
-
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(5);
+  
+  // const { data: users = [], isLoading, error } = useGetUsersPaginatedQuery({
+  // page:currentPage,
+  // limit: pageSize,
+  // });
+  
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,6 +51,20 @@ export default function UserManagement() {
       statusFilter === "all" || user.status === statusFilter;
     return matchesSearch && matchesRole && matchesStatus;
   });
+
+  useEffect(()=>{
+    setCurrentPage(1);
+  },[statusFilter, roleFilter])
+
+  
+  {
+    /* config pagination */
+  }
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+  
 
   const toggleStatus = async (userId: number) => {
     const user = users.find((u) => u.id === userId);
@@ -93,6 +129,58 @@ export default function UserManagement() {
         </button>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <Users className="w-8 h-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">
+                Tổng người dùng
+              </p>
+              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <UserCheck className="w-8 h-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">
+                Đang hoạt động
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter((u) => u.status === "active").length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <UserX className="w-8 h-8 text-gray-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Đã khoá</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter((u) => u.status === "banned").length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <ShieldCheck className="w-8 h-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Quản trị viên</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter((u) => u.role === "admin").length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <input
           value={searchTerm}
@@ -134,7 +222,7 @@ export default function UserManagement() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {filteredUsers.map((user) => (
+            {paginatedUsers.map((user) => (
               <tr key={user.id}>
                 <td className="px-6 py-4 flex items-center space-x-3">
                   <img
@@ -166,7 +254,7 @@ export default function UserManagement() {
                 </td>
                 <td className="px-6 py-4 text-sm space-x-2 text-center">
                   <button
-                  type="button"
+                    type="button"
                     onClick={() => setSelectedUser(user)}
                     className="text-blue-600 hover:text-blue-900"
                     title="Xem chi tiết"
@@ -174,7 +262,7 @@ export default function UserManagement() {
                     <Eye className="w-4 h-4" />
                   </button>
                   <button
-                  type="button"
+                    type="button"
                     onClick={() => toggleStatus(user.id)}
                     disabled={isUpdating}
                     className="text-yellow-600 hover:text-yellow-800 disabled:opacity-50"
@@ -182,7 +270,7 @@ export default function UserManagement() {
                     <Ban className="w-4 h-4" />
                   </button>
                   <button
-                  type="button"
+                    type="button"
                     onClick={() => setUserToDelete(user)}
                     disabled={isDeleting}
                     className="text-red-600 hover:text-red-900 disabled:opacity-50"
@@ -207,7 +295,7 @@ export default function UserManagement() {
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
           onEdit={(user) => {
-            setSelectedUser(null); 
+            setSelectedUser(null);
             setEditingUser(user);
           }}
         />
@@ -227,6 +315,19 @@ export default function UserManagement() {
         <EditUserModal
           user={editingUser}
           onClose={() => setEditingUser(null)}
+        />
+      )}
+
+      {filteredUsers.length > 0 && (
+        <CustomPagination
+          currentPage={currentPage}
+          pageSize={pageSize}
+          total={users.length}
+          onChange={(page, size) => {
+            setCurrentPage(page);
+            setPageSize(size);
+          }}
+          simple
         />
       )}
     </div>

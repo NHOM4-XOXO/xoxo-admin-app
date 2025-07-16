@@ -34,7 +34,10 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createUser(formData).unwrap();
+      await createUser({
+        ...formData,
+        createdAt: Date.now.toString(),
+      }).unwrap();
       onClose();
     } catch (error) {
       console.error('Failed to create user:', error);
