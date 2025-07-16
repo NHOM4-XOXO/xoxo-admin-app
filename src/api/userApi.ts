@@ -26,6 +26,16 @@ export const userAPI = createApi({
       query: (id) => `/users/${id}`,
       providesTags: (_, __, id) => [{ type: "User", id }],
     }),
+    getUsersPaginated: builder.query<User[], { page: number; limit: number }>({
+      query: ({ page, limit }) => `/users?_page=${page}&_limit=${limit}`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "User" as const, id })),
+              { type: "User", id: "LIST" },
+            ]
+          : [{ type: "User", id: "LIST" }],
+    }),
     updateUser: builder.mutation<User, Partial<User> & Pick<User, "id">>({
       query: ({ id, ...patch }) => ({
         url: `/users/${id}`,
@@ -64,4 +74,5 @@ export const {
   useUpdateUserMutation,
   useDeleteUserMutation,
   useCreateUserMutation,
+  useGetUsersPaginatedQuery,
 } = userAPI;
