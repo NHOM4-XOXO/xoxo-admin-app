@@ -37,39 +37,37 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(0);
   const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [pageSize, setPageSize] = useState(5);
-  
+
   // const { data: users = [], isLoading, error } = useGetUsersPaginatedQuery({
   // page:currentPage,
   // limit: pageSize,
   // });
-  
-   useEffect(() => {
-     setFilteredUsers(
-       users.filter((user) => {
-         const matchesSearch =
-           user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-         const matchesStatus =
-           statusFilter === "all" || user.status === statusFilter;
-         return matchesSearch && matchesStatus;
-       })
-     );
-   }, [users, searchTerm, statusFilter]);
+  useEffect(() => {
+    setFilteredUsers(
+      users.filter((user) => {
+        const matchesSearch =
+          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-  useEffect(()=>{
+        const matchesStatus =
+          statusFilter === "all" || user.status === statusFilter;
+        const matchesRole = roleFilter === "all" || user.role === roleFilter;
+        return matchesSearch && matchesStatus && matchesRole;
+      })
+    );
+  }, [users, searchTerm, statusFilter, roleFilter]);
+
+  useEffect(() => {
     setCurrentPage(1);
-  },[statusFilter, roleFilter, searchTerm])
+  }, [statusFilter, roleFilter, searchTerm]);
 
-  
   {
     /* config pagination */
   }
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-
-  
 
   const toggleStatus = async (userId: number) => {
     const user = users.find((u) => u.id === userId);
@@ -85,6 +83,13 @@ export default function UserManagement() {
     }
   };
 
+  const handleFilterByStatus = (status: string) => {
+    setStatusFilter(status);
+  };
+
+  const handleFilterByRole = (role: string) => {
+    setRoleFilter(role);
+  };
   const handleDelete = async () => {
     if (userToDelete) {
       try {
@@ -136,53 +141,77 @@ export default function UserManagement() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <Users className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Tổng người dùng
-              </p>
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+          <button
+            onClick={() => handleFilterByRole("all")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <Users className="w-8 h-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Tổng người dùng
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {users.length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <UserCheck className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">
-                Đang hoạt động
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.status === "active").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("active")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <UserCheck className="w-8 h-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Đang hoạt động
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {users.filter((u) => u.status === "active").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <UserX className="w-8 h-8 text-gray-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đã khoá</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.status === "banned").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("banned")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <UserX className="w-8 h-8 text-gray-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Đã khoá</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {users.filter((u) => u.status === "banned").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <ShieldCheck className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Quản trị viên</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.role === "admin").length}
-              </p>
+          <button
+            onClick={() => handleFilterByRole("admin")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <ShieldCheck className="w-8 h-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Quản trị viên
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {users.filter((u) => u.role === "admin").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -322,7 +351,7 @@ export default function UserManagement() {
           onClose={() => setEditingUser(null)}
         />
       )}
-      
+
       {filteredUsers.length > 0 && (
         <CustomPagination
           currentPage={currentPage}
@@ -332,7 +361,6 @@ export default function UserManagement() {
             setCurrentPage(page);
             setPageSize(size);
           }}
-          
         />
       )}
     </div>

@@ -46,6 +46,11 @@ export default function ReportManagement() {
     );
   }, [reports, searchTerm, statusFilter]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedReports = filteredReports.slice(startIndex, endIndex);
