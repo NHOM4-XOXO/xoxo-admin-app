@@ -87,6 +87,9 @@ export default function UserManagement() {
     setStatusFilter(status);
   };
 
+  const handleFilterByRole = (role: string) => {
+    setRoleFilter(role);
+  };
   const handleDelete = async () => {
     if (userToDelete) {
       try {
@@ -139,7 +142,7 @@ export default function UserManagement() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <button
-            onClick={() => handleFilterByStatus("all")}
+            onClick={() => handleFilterByRole("all")}
             className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
           >
             <div className="flex items-center">
@@ -194,7 +197,7 @@ export default function UserManagement() {
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <button
-            onClick={() => handleFilterByStatus("admin")}
+            onClick={() => handleFilterByRole("admin")}
             className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
           >
             <div className="flex items-center">
