@@ -22,6 +22,7 @@ import {
 } from "../api/userApi";
 import type { User as UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
+import { removeVietnameseTones } from "../components/removeVietnameseTones";
 
 export default function UserManagement() {
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
@@ -44,11 +45,13 @@ export default function UserManagement() {
   // });
 
   useEffect(() => {
+    const keyword = removeVietnameseTones(searchTerm.toLowerCase());
+
     setFilteredUsers(
       users.filter((user) => {
         const matchesSearch =
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase());
+          removeVietnameseTones(user.name.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones(user.email.toLowerCase()).includes(keyword);
 
         const matchesStatus =
           statusFilter === "all" || user.status === statusFilter;

@@ -19,6 +19,7 @@ import {
 } from "../api/postAPI";
 import type { Post } from "../types/Post.type";
 import CustomPagination from "../components/CustomPagination";
+import { removeVietnameseTones } from "../components/removeVietnameseTones";
 
 export default function PostManagement() {
   // Redux hooks for data fetching and mutations
@@ -42,16 +43,19 @@ export default function PostManagement() {
   const endIndex = startIndex + pageSize;
   const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
 
+  
+
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, searchTerm]);
   // Filter posts based on search and filter criteria
   useEffect(() => {
+    const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredPosts(
       posts.filter((post) => {
         const matchesSearch =
-          post.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          post.content.toLowerCase().includes(searchTerm.toLowerCase());
+          removeVietnameseTones(post.author.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones(post.content.toLowerCase()).includes(keyword);
 
         const matchesStatus =
           statusFilter === "all" || post.status === statusFilter;
