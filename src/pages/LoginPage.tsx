@@ -17,9 +17,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [errorEmail, setErrorEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const { login } = useAuth();
+
+  const isValidEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,11 +100,24 @@ export default function LoginPage() {
                     type="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (!isValidEmail(e.target.value)) {
+                        setErrorEmail("Email không hợp lệ");
+                      } else {
+                        setErrorEmail("");
+                      }
+                    }}
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     placeholder="Nhập email của bạn"
                   />
                 </div>
+                {errorEmail && (
+                  <div className=" text-red-600 px-4 py-3 rounded-xl text-sm flex items-center space-x-2">
+                    <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                    <span>{errorEmail}</span>
+                  </div>
+                )}
               </div>
 
               {/* Password Field */}
