@@ -16,6 +16,7 @@ import {
 } from "../api/reportApi.ts";
 import CustomPagination from "../components/CustomPagination.tsx";
 import type { Report } from "../types/Report.type.ts";
+import { removeVietnameseTones } from "../components/removeVietnameseTones.tsx";
 
 export default function ReportManagement() {
   // Redux hooks for data fetching and mutations
@@ -33,11 +34,12 @@ export default function ReportManagement() {
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
+    const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredReports(
       reports.filter((report) => {
         const matchesSearch =
-          report.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.content.toLowerCase().includes(searchTerm.toLowerCase());
+          removeVietnameseTones(report.author.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones(report.content.toLowerCase()).includes(keyword);
 
         const matchesStatus =
           statusFilter === "all" || report.status === statusFilter;

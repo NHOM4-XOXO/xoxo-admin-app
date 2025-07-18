@@ -119,7 +119,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex flex-col h-full bg-white border-r border-gray-200">
         <div className="flex items-center h-16 px-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+          <img src="./public/logo_xoxo_500px-removebg-preview.png" alt="Logo" className="h-8 w-auto" />
+          <div className="ml-3 text-lg font-semibold text-gray-900">
+            ADMIN PANEL
+          </div>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
           {navigation.map((item) => {
