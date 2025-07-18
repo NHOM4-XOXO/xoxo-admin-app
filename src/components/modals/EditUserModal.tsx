@@ -1,28 +1,49 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useUpdateUserMutation } from "../../api/userApi";
+import { useGetLocationsQuery } from "../../api/locationApi";
 import type { User } from "../../types/User.type";
-
+import { useEffect } from "react";
+import { X } from "lucide-react";
+import userSchema from "../../schema/UserSchema";
 
 interface EditUserModalProps {
   user: User;
   onClose: () => void;
 }
 
+
 export default function EditUserModal({ user, onClose }: EditUserModalProps) {
-  const [formData, setFormData] = useState<User>({ ...user });
   const [updateUser, { isLoading }] = useUpdateUserMutation();
+  const { data: locations = [] } = useGetLocationsQuery();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<Omit<User, "id">>({
+    resolver: yupResolver(userSchema),
+    defaultValues: {
+      name: user.name,
+      email: user.email,
+      bio: user.bio,
+      location: user.location,
+      birthday: user.birthday,
+      gender: user.gender,
+      role: user.role,
+      status: user.status,
+    },
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  useEffect(() => {
+    Object.entries(user).forEach(([key, value]) => {
+      setValue(key as keyof Omit<User, "id">, value);
+    });
+  }, [user, setValue]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: Omit<User, "id">) => {
     try {
-      const { id, ...patch } = formData;
-      await updateUser({ id, ...patch }).unwrap();
+      await updateUser({ id: user.id, ...data }).unwrap();
       onClose();
     } catch (error) {
       console.error("Cập nhật thất bại:", error);
@@ -32,7 +53,7 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-lg p-6 w-full max-w-2xl shadow-lg relative"
       >
         <button
@@ -47,65 +68,41 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium">Họ tên</label>
-            <input
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
-            />
+            <input {...register("name")} className="w-full mt-1 border rounded px-3 py-2" />
+            <p className="text-red-500 text-sm mt-1">{errors.name?.message}</p>
           </div>
 
           <div>
             <label className="text-sm font-medium">Email</label>
-            <input
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
-              disabled
-            />
+            <input {...register("email")} className="w-full mt-1 border rounded px-3 py-2" disabled />
+            <p className="text-red-500 text-sm mt-1">{errors.email?.message}</p>
           </div>
 
           <div>
             <label className="text-sm font-medium">Giới thiệu</label>
-            <textarea
-              name="bio"
-              value={formData.bio || ""}
-              onChange={handleChange}
-              rows={2}
-              className="w-full mt-1 border rounded px-3 py-2"
-            />
+            <textarea {...register("bio")} rows={2} className="w-full mt-1 border rounded px-3 py-2" />
           </div>
 
           <div>
             <label className="text-sm font-medium">Vị trí</label>
-            <input
-              name="location"
-              value={formData.location || ""}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
-            />
+            <select {...register("location")} className="w-full mt-1 border rounded px-3 py-2">
+              <option value="">-- Chọn vị trí --</option>
+              {locations.map((loc) => (
+                <option key={loc.code} value={loc.name} >
+                  {loc.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="text-sm font-medium">Ngày sinh</label>
-            <input
-              type="date"
-              name="birthday"
-              value={formData.birthday || ""}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
-            />
+            <input type="date" {...register("birthday")} className="w-full mt-1 border rounded px-3 py-2" />
           </div>
 
           <div>
             <label className="text-sm font-medium">Giới tính</label>
-            <select
-              name="gender"
-              value={formData.gender || ""}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
-            >
+            <select {...register("gender")} className="w-full mt-1 border rounded px-3 py-2">
               <option value="">-- Chọn giới tính --</option>
               <option value="male">Nam</option>
               <option value="female">Nữ</option>
@@ -115,28 +112,20 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
 
           <div>
             <label className="text-sm font-medium">Vai trò</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
-            >
+            <select {...register("role")} className="w-full mt-1 border rounded px-3 py-2">
               <option value="user">Người dùng</option>
               <option value="admin">Admin</option>
             </select>
+            <p className="text-red-500 text-sm mt-1">{errors.role?.message}</p>
           </div>
 
           <div>
             <label className="text-sm font-medium">Trạng thái</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
-            >
+            <select {...register("status")} className="w-full mt-1 border rounded px-3 py-2">
               <option value="active">Hoạt động</option>
               <option value="banned">Đã khoá</option>
             </select>
+            <p className="text-red-500 text-sm mt-1">{errors.status?.message}</p>
           </div>
         </div>
 
