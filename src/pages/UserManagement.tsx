@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Eye,
   Ban,
@@ -36,7 +36,7 @@ export default function UserManagement() {
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
+  // const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [pageSize, setPageSize] = useState(5);
 
   // const { data: users = [], isLoading, error } = useGetUsersPaginatedQuery({
@@ -44,21 +44,17 @@ export default function UserManagement() {
   // limit: pageSize,
   // });
 
-  useEffect(() => {
+  const filteredUsers = useMemo(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
-
-    setFilteredUsers(
-      users.filter((user) => {
-        const matchesSearch =
-          removeVietnameseTones(user.name.toLowerCase()).includes(keyword) ||
-          removeVietnameseTones(user.email.toLowerCase()).includes(keyword);
-
-        const matchesStatus =
-          statusFilter === "all" || user.status === statusFilter;
-        const matchesRole = roleFilter === "all" || user.role === roleFilter;
-        return matchesSearch && matchesStatus && matchesRole;
-      })
-    );
+    return users.filter((user) => {
+      const matchesSearch =
+        removeVietnameseTones(user.name.toLowerCase()).includes(keyword) ||
+        removeVietnameseTones(user.email.toLowerCase()).includes(keyword);
+      const matchesStatus =
+        statusFilter === "all" || user.status === statusFilter;
+      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      return matchesSearch && matchesStatus && matchesRole;
+    });
   }, [users, searchTerm, statusFilter, roleFilter]);
 
   useEffect(() => {

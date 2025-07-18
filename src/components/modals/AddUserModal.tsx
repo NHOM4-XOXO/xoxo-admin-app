@@ -1,54 +1,61 @@
-import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useCreateUserMutation } from "../../api/userApi";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import type { User } from "../../types/User.type";
+import { useGetLocationsQuery } from "../../api/locationApi";
+import userSchema from "../../schema/UserSchema"; 
 
 interface AddUserModalProps {
   onClose: () => void;
 }
 
+
+
 export default function AddUserModal({ onClose }: AddUserModalProps) {
   const [createUser, { isLoading }] = useCreateUserMutation();
-  const [formData, setFormData] = useState<Omit<User, "id">>({
-    name: "",
-    email: "",
-    avatar: "/placeholder.svg",
-    coverPhoto: "",
-    bio: "",
-    location: "",
-    birthday: "",
-    gender: undefined,
-    role: "user",
-    status: "active",
-    friends: [],
-    followers: [],
-    following: [],
-    createdAt: new Date().toISOString(),
+  const { data: locations = [] } = useGetLocationsQuery();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Omit<User, "id">>({
+    resolver: yupResolver(userSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      avatar: "/placeholder.svg",
+      coverPhoto: "",
+      bio: "",
+      location: "",
+      birthday: "",
+      gender: undefined,
+      role: "user",
+      status: "active",
+      createdAt: new Date().toISOString(),
+      friends: [],
+      followers: [],
+      following: [],
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: Omit<User, "id">) => {
     try {
       await createUser({
-        ...formData,
-        createdAt: Date.now.toString(),
+        ...data,
+        createdAt: Date.now().toString(),
       }).unwrap();
       onClose();
     } catch (error) {
-      console.error('Failed to create user:', error);
-      // TODO: Show error message to user
+      console.error("Failed to create user:", error);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-lg p-6 w-full max-w-2xl shadow-lg relative"
       >
         <button
@@ -64,54 +71,58 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
           <div>
             <label className="text-sm font-medium">Họ tên</label>
             <input
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
+              {...register("name")}
               className="w-full mt-1 border rounded px-3 py-2"
-              required
             />
+            {errors.name && (
+              <p className="text-red-500 text-sm">{errors.name.message}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Email</label>
             <input
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded px-3 py-2"
+              {...register("email")}
               type="email"
-              required
+              className="w-full mt-1 border rounded px-3 py-2"
             />
+            {errors.email && (
+              <p className="text-red-500 text-sm">{errors.email.message}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Giới thiệu</label>
             <textarea
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
+              {...register("bio")}
               rows={2}
               className="w-full mt-1 border rounded px-3 py-2"
             />
+            {errors.bio && (
+              <p className="text-red-500 text-sm">{errors.bio.message}</p>
+            )}
           </div>
 
           <div>
             <label className="text-sm font-medium">Vị trí</label>
-            <input
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
+            <select
+              {...register("location")}
               className="w-full mt-1 border rounded px-3 py-2"
-            />
+            >
+              <option value="">-- Chọn vị trí --</option>
+              {locations?.map((loc) => (
+                <option key={loc.code} value={loc.name}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="text-sm font-medium">Ngày sinh</label>
             <input
               type="date"
-              name="birthday"
-              value={formData.birthday}
-              onChange={handleChange}
+              {...register("birthday")}
               className="w-full mt-1 border rounded px-3 py-2"
             />
           </div>
@@ -119,9 +130,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
           <div>
             <label className="text-sm font-medium">Giới tính</label>
             <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
+              {...register("gender")}
               className="w-full mt-1 border rounded px-3 py-2"
             >
               <option value="">-- Chọn giới tính --</option>
@@ -134,9 +143,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
           <div>
             <label className="text-sm font-medium">Vai trò</label>
             <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
+              {...register("role")}
               className="w-full mt-1 border rounded px-3 py-2"
             >
               <option value="user">Người dùng</option>
@@ -147,9 +154,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
           <div>
             <label className="text-sm font-medium">Trạng thái</label>
             <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
+              {...register("status")}
               className="w-full mt-1 border rounded px-3 py-2"
             >
               <option value="active">Hoạt động</option>
