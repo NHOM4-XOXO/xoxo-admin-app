@@ -18,6 +18,8 @@ import {
   useUpdatePostMutation,
 } from "../api/postAPI";
 import type { Post } from "../types/Post.type";
+import CustomPagination from "../components/CustomPagination";
+import { removeVietnameseTones } from "../components/removeVietnameseTones";
 
 export default function PostManagement() {
   // Redux hooks for data fetching and mutations
@@ -33,13 +35,27 @@ export default function PostManagement() {
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
 
+  //Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+
+  
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchTerm]);
   // Filter posts based on search and filter criteria
   useEffect(() => {
+    const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredPosts(
       posts.filter((post) => {
         const matchesSearch =
-          post.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          post.content.toLowerCase().includes(searchTerm.toLowerCase());
+          removeVietnameseTones(post.author.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones(post.content.toLowerCase()).includes(keyword);
 
         const matchesStatus =
           statusFilter === "all" || post.status === statusFilter;
@@ -83,6 +99,10 @@ export default function PostManagement() {
   //       return status;
   //   }
   // };
+
+  const handleFilterByStatus = (status: string) => {
+    setStatusFilter(status);
+  };
 
   const handleStatusChange = async (
     postId: number,
@@ -149,46 +169,70 @@ export default function PostManagement() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <FileText className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng bài viết</p>
-              <p className="text-2xl font-bold text-gray-900">{posts.length}</p>
+          <button
+            onClick={() => handleFilterByStatus("all")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <FileText className="w-8 h-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Tổng bài viết
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {posts.length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <Eye className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đã đăng</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {posts.filter((p) => p.status === "published").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("published")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <Eye className="w-8 h-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Đã đăng</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {posts.filter((p) => p.status === "published").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <EyeOff className="w-8 h-8 text-gray-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đã ẩn</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {posts.filter((p) => p.status === "hidden").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("hidden")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <EyeOff className="w-8 h-8 text-gray-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Đã ẩn</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {posts.filter((p) => p.status === "hidden").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <AlertTriangle className="w-8 h-8 text-red-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Bị báo cáo</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {posts.filter((p) => p.status === "reported").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("reported")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Bị báo cáo</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {posts.filter((p) => p.status === "reported").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -246,7 +290,7 @@ export default function PostManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredPosts.map((post) => (
+              {paginatedPosts.map((post) => (
                 <tr key={post.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
@@ -473,6 +517,16 @@ export default function PostManagement() {
           </div>
         </div>
       )}
+      {/* Pagination */}
+      <CustomPagination
+        currentPage={currentPage}
+        pageSize={pageSize}
+        total={filteredPosts.length}
+        onChange={(page, pageSize) => {
+          setCurrentPage(page);
+          setPageSize(pageSize);
+        }}
+      />
     </div>
   );
 }

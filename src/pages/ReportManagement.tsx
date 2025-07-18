@@ -10,8 +10,13 @@ import {
   ShieldAlert,
   UserX,
 } from "lucide-react";
-import { useGetReportsQuery, useUpdateReportMutation } from "../api/reportApi";
-import type { Report } from "../types/Report.type";
+import {
+  useGetReportsQuery,
+  useUpdateReportMutation,
+} from "../api/reportApi.ts";
+import CustomPagination from "../components/CustomPagination.tsx";
+import type { Report } from "../types/Report.type.ts";
+import { removeVietnameseTones } from "../components/removeVietnameseTones.tsx";
 
 export default function ReportManagement() {
   // Redux hooks for data fetching and mutations
@@ -24,14 +29,17 @@ export default function ReportManagement() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
+    const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredReports(
       reports.filter((report) => {
         const matchesSearch =
-          report.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          report.content.toLowerCase().includes(searchTerm.toLowerCase());
+          removeVietnameseTones(report.author.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones(report.content.toLowerCase()).includes(keyword);
 
         const matchesStatus =
           statusFilter === "all" || report.status === statusFilter;
@@ -39,6 +47,15 @@ export default function ReportManagement() {
       })
     );
   }, [reports, searchTerm, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedReports = filteredReports.slice(startIndex, endIndex);
 
   const getStatusBadge = (status: Report["status"]) => {
     switch (status) {
@@ -75,6 +92,10 @@ export default function ReportManagement() {
     } catch (error) {
       console.error("Failed to update report status:", error);
     }
+  };
+
+  const handleFilterByStatus = (status: string) => {
+    setStatusFilter(status);
   };
 
   const viewReportDetails = (report: Report) => {
@@ -117,48 +138,70 @@ export default function ReportManagement() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <ShieldAlert className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Tổng báo cáo</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("all")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <ShieldAlert className="w-8 h-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">
+                  Tổng báo cáo
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <Clock className="w-8 h-8 text-yellow-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.filter((r) => r.status === "hidden").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("hidden")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <Clock className="w-8 h-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.filter((r) => r.status === "hidden").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <Check className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Đã xử lý</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.filter((r) => r.status === "published").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("published")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <Check className="w-8 h-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Đã xử lý</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.filter((r) => r.status === "published").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <UserX className="w-8 h-8 text-red-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Vi phạm</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {reports.filter((r) => r.status === "reported").length}
-              </p>
+          <button
+            onClick={() => handleFilterByStatus("reported")}
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
+          >
+            <div className="flex items-center">
+              <UserX className="w-8 h-8 text-red-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Vi phạm</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {reports.filter((r) => r.status === "reported").length}
+                </p>
+              </div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -191,7 +234,7 @@ export default function ReportManagement() {
 
       {/* Reports Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className=" overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -216,7 +259,7 @@ export default function ReportManagement() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredReports.map((report) => (
+              {paginatedReports.map((report) => (
                 <tr key={report.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
@@ -417,6 +460,17 @@ export default function ReportManagement() {
           </div>
         </div>
       )}
+      {/* Call Components Pagination */}
+
+      <CustomPagination
+        currentPage={currentPage}
+        pageSize={pageSize}
+        total={filteredReports.length}
+        onChange={(page, pageSize) => {
+          setCurrentPage(page);
+          setPageSize(pageSize);
+        }}
+      />
     </div>
   );
 }

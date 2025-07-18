@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, dev, staging ]
+    branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
 
@@ -34,4 +34,3 @@ jobs:
         ls -la dist/
         echo "✅ Build successful!"
 
-  
