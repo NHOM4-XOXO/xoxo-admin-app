@@ -12,7 +12,6 @@ interface EditUserModalProps {
   onClose: () => void;
 }
 
-
 export default function EditUserModal({ user, onClose }: EditUserModalProps) {
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const { data: locations = [] } = useGetLocationsQuery();
@@ -36,10 +35,11 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
   });
 
   useEffect(() => {
+    if (locations.length === 0) return; 
     Object.entries(user).forEach(([key, value]) => {
       setValue(key as keyof Omit<User, "id">, value);
     });
-  }, [user, setValue]);
+  }, [user,locations, setValue]);
 
   const onSubmit = async (data: Omit<User, "id">) => {
     try {
@@ -68,27 +68,45 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium">Họ tên</label>
-            <input {...register("name")} className="w-full mt-1 border rounded px-3 py-2" />
+            <input
+              {...register("name")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            />
             <p className="text-red-500 text-sm mt-1">{errors.name?.message}</p>
           </div>
 
           <div>
             <label className="text-sm font-medium">Email</label>
-            <input {...register("email")} className="w-full mt-1 border rounded px-3 py-2" disabled />
+            <input
+              {...register("email")}
+              className="w-full mt-1 border rounded px-3 py-2"
+              disabled
+            />
             <p className="text-red-500 text-sm mt-1">{errors.email?.message}</p>
           </div>
 
           <div>
             <label className="text-sm font-medium">Giới thiệu</label>
-            <textarea {...register("bio")} rows={2} className="w-full mt-1 border rounded px-3 py-2" />
+            <textarea
+              {...register("bio")}
+              rows={2}
+              className="w-full mt-1 border rounded px-3 py-2"
+            />
           </div>
 
           <div>
             <label className="text-sm font-medium">Vị trí</label>
-            <select {...register("location")} className="w-full mt-1 border rounded px-3 py-2">
+            <select
+              {...register("location")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            >
               <option value="">-- Chọn vị trí --</option>
+              {!locations.find((loc) => loc.name === user.location) &&
+                user.location && (
+                  <option value={String(user.location)}>{user.location}</option>
+                )}
               {locations.map((loc) => (
-                <option key={loc.code} value={loc.name} >
+                <option key={loc.code} value={loc.name ?? ""}>
                   {loc.name}
                 </option>
               ))}
@@ -97,12 +115,19 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
 
           <div>
             <label className="text-sm font-medium">Ngày sinh</label>
-            <input type="date" {...register("birthday")} className="w-full mt-1 border rounded px-3 py-2" />
+            <input
+              type="date"
+              {...register("birthday")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            />
           </div>
 
           <div>
             <label className="text-sm font-medium">Giới tính</label>
-            <select {...register("gender")} className="w-full mt-1 border rounded px-3 py-2">
+            <select
+              {...register("gender")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            >
               <option value="">-- Chọn giới tính --</option>
               <option value="male">Nam</option>
               <option value="female">Nữ</option>
@@ -112,7 +137,10 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
 
           <div>
             <label className="text-sm font-medium">Vai trò</label>
-            <select {...register("role")} className="w-full mt-1 border rounded px-3 py-2">
+            <select
+              {...register("role")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            >
               <option value="user">Người dùng</option>
               <option value="admin">Admin</option>
             </select>
@@ -121,11 +149,16 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
 
           <div>
             <label className="text-sm font-medium">Trạng thái</label>
-            <select {...register("status")} className="w-full mt-1 border rounded px-3 py-2">
+            <select
+              {...register("status")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            >
               <option value="active">Hoạt động</option>
               <option value="banned">Đã khoá</option>
             </select>
-            <p className="text-red-500 text-sm mt-1">{errors.status?.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {errors.status?.message}
+            </p>
           </div>
         </div>
 
