@@ -31,6 +31,14 @@ export default function ReportManagement() {
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
+  const [confirmModal, setConfirmModal] = useState<{
+    report: Report | null;
+    newStatus: Report["status"] | null;
+    reason: Report["reason"] | null;
+    
+  } | null>(null);
+  const [reason, setReason] = useState("");
+
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
@@ -79,20 +87,23 @@ export default function ReportManagement() {
         );
     }
   };
-
+  
   const handleStatusChange = async (
     reportId: number,
-    newStatus: Report["status"]
+    newStatus: Report["status"],
+    reason?: string // 🆕 thêm lý do nếu có
   ) => {
     try {
       await updateReport({
         id: reportId,
         status: newStatus,
+        ...(reason && { reason }), // 🆕 chỉ gửi nếu có reason
       }).unwrap();
     } catch (error) {
       console.error("Failed to update report status:", error);
     }
   };
+
 
   const handleFilterByStatus = (status: string) => {
     setStatusFilter(status);
@@ -137,72 +148,47 @@ export default function ReportManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("all")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <ShieldAlert className="w-8 h-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Tổng báo cáo
+        {[
+          {
+            icon: <ShieldAlert className="w-10 h-10 text-blue-600" />,
+            label: "Tổng báo cáo",
+            count: reports.length,
+            onClick: () => handleFilterByStatus("all"),
+          },
+          {
+            icon: <Clock className="w-10 h-10 text-yellow-600" />,
+            label: "Chờ xử lý",
+            count: reports.filter((r) => r.status === "hidden").length,
+            onClick: () => handleFilterByStatus("hidden"),
+          },
+          {
+            icon: <Check className="w-10 h-10 text-green-600" />,
+            label: "Đã xử lý",
+            count: reports.filter((r) => r.status === "published").length,
+            onClick: () => handleFilterByStatus("published"),
+          },
+          {
+            icon: <UserX className="w-10 h-10 text-red-600" />,
+            label: "Vi phạm",
+            count: reports.filter((r) => r.status === "reported").length,
+            onClick: () => handleFilterByStatus("reported"),
+          },
+        ].map((item, index) => (
+          <div key={index}>
+            <button
+              onClick={item.onClick}
+              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+            >
+              {item.icon}
+              <div className="ml-4 text-left">
+                <p className="text-base font-medium text-gray-600">
+                  {item.label}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{item.count}</p>
               </div>
-            </div>
-          </button>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("hidden")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <Clock className="w-8 h-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Chờ xử lý</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter((r) => r.status === "hidden").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("published")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <Check className="w-8 h-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Đã xử lý</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter((r) => r.status === "published").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("reported")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <UserX className="w-8 h-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Vi phạm</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter((r) => r.status === "reported").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}
@@ -312,7 +298,11 @@ export default function ReportManagement() {
                         <>
                           <button
                             onClick={() =>
-                              handleStatusChange(report.id, "published")
+                              setConfirmModal({
+                                report,
+                                newStatus: "published",
+                                reason: null,
+                              })
                             }
                             disabled={isUpdating}
                             className="text-green-600 hover:text-green-900 disabled:opacity-50"
@@ -320,9 +310,14 @@ export default function ReportManagement() {
                           >
                             <Check className="w-4 h-4" />
                           </button>
+
                           <button
                             onClick={() =>
-                              handleStatusChange(report.id, "reported")
+                              setConfirmModal({
+                                report,
+                                newStatus: "reported",
+                                reason: null,
+                              })
                             }
                             disabled={isUpdating}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50"
@@ -431,28 +426,53 @@ export default function ReportManagement() {
                   </div>
                 </div>
 
-                <div className="border-t pt-4 flex justify-end space-x-3">
-                  {selectedReport.status !== "reported" && (
-                    <button
-                      onClick={() => {
-                        handleStatusChange(selectedReport.id, "reported");
-                        setShowReportModal(false);
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
-                    >
-                      Đánh dấu vi phạm
-                    </button>
-                  )}
-                  {selectedReport.status !== "published" && (
-                    <button
-                      onClick={() => {
-                        handleStatusChange(selectedReport.id, "published");
-                        setShowReportModal(false);
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700"
-                    >
-                      Đánh dấu đã xử lý
-                    </button>
+                <div className="border-t pt-4">
+                  {selectedReport.status === "hidden" ? (
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() =>
+                          setConfirmModal({
+                            report: selectedReport,
+                            newStatus: "published",
+                            reason: null,
+                          })
+                        }
+                        disabled={isUpdating}
+                        className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                        title="Đánh dấu đã xử lý"
+                      >
+                        <Check className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setConfirmModal({
+                            report: selectedReport,
+                            newStatus: "reported",
+                            reason: null,
+                          })
+                        }
+                        disabled={isUpdating}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        title="Đánh dấu vi phạm"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-700 text-right">
+                      Trạng thái hiện tại:{" "}
+                      <span
+                        className={`font-semibold ${
+                          selectedReport.status === "published"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {selectedReport.status === "published"
+                          ? "Đã xử lý"
+                          : "Đã đánh dấu vi phạm"}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -460,6 +480,87 @@ export default function ReportManagement() {
           </div>
         </div>
       )}
+      {confirmModal && confirmModal.report && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Xác nhận hành động
+            </h2>
+            <p className="text-gray-700 mb-2">
+              Bạn có chắc muốn{" "}
+              <span className="font-semibold text-red-600">
+                {confirmModal.newStatus === "reported"
+                  ? "đánh dấu vi phạm"
+                  : "đánh dấu đã xử lý"}
+              </span>{" "}
+              báo cáo này không?
+            </p>
+
+            {confirmModal.newStatus === "reported" && (
+              <>
+                <label className="block text-sm text-gray-700 mb-1 mt-3">
+                  Lý do <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Nhập lý do gửi đến người dùng..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </>
+            )}
+
+            {/* Buttons */}
+            <div className="flex justify-end mt-4 space-x-3">
+              <button
+                onClick={() => {
+                  setConfirmModal(null);
+                  setReason("");
+                }}
+                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md"
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={async () => {
+                  if (confirmModal.newStatus === "reported" && !reason.trim()) {
+                    alert("Vui lòng nhập lý do khi đánh dấu vi phạm.");
+                    return;
+                  }
+
+                  if (confirmModal.report && confirmModal.newStatus !== null) {
+                    await handleStatusChange(
+                      confirmModal.report.id,
+                      confirmModal.newStatus,
+                      reason.trim() || undefined
+                    );
+                  }
+
+                  // Nếu đang xem chi tiết thì cập nhật trạng thái luôn
+                  if (
+                    selectedReport?.id &&
+                    confirmModal.report &&
+                    selectedReport.id === confirmModal.report.id
+                  ) {
+                    setSelectedReport({
+                      ...selectedReport,
+                      status: confirmModal.newStatus!,
+                    });
+                  }
+
+                  setConfirmModal(null);
+                  setReason("");
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Call Components Pagination */}
 
       <CustomPagination
