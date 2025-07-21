@@ -11,6 +11,7 @@ import {
   ArrowRight,
   CheckCircle,
 } from "lucide-react";
+import ForgotPasswordModal from "../components/modals/ForgotPasswordModal";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ export default function LoginPage() {
   const [errorEmail, setErrorEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const { login } = useAuth();
 
   const isValidEmail = (email: string) => {
@@ -176,12 +178,13 @@ export default function LoginPage() {
                 </label>
               </div>
               <div className="text-sm">
-                <a
-                  href="#"
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPasswordModal(true)}
                   className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Quên mật khẩu?
-                </a>
+                </button>
               </div>
             </div>
 
@@ -296,6 +299,11 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      {showForgotPasswordModal && (
+        <ForgotPasswordModal
+          onClose={() => setShowForgotPasswordModal(false)}
+        />
+      )}
     </div>
   );
 }
