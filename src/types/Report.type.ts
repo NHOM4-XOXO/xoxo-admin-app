@@ -10,4 +10,5 @@ export interface Report {
   shares: number;
   status: "published" | "reported" | "hidden";
   reports: number;
+  reason?: string;
 }

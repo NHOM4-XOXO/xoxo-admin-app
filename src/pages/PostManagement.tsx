@@ -168,72 +168,47 @@ export default function PostManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("all")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <FileText className="w-8 h-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Tổng bài viết
+        {[
+          {
+            icon: <FileText className="w-10 h-10 text-blue-600" />,
+            label: "Tổng bài viết",
+            count: posts.length,
+            onClick: () => handleFilterByStatus("all"),
+          },
+          {
+            icon: <Eye className="w-10 h-10 text-green-600" />,
+            label: "Đã đăng",
+            count: posts.filter((p) => p.status === "published").length,
+            onClick: () => handleFilterByStatus("published"),
+          },
+          {
+            icon: <EyeOff className="w-10 h-10 text-gray-600" />,
+            label: "Đã ẩn",
+            count: posts.filter((p) => p.status === "hidden").length,
+            onClick: () => handleFilterByStatus("hidden"),
+          },
+          {
+            icon: <AlertTriangle className="w-10 h-10 text-red-600" />,
+            label: "Bị báo cáo",
+            count: posts.filter((p) => p.status === "reported").length,
+            onClick: () => handleFilterByStatus("reported"),
+          },
+        ].map((item, index) => (
+          <div key={index}>
+            <button
+              onClick={item.onClick}
+              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+            >
+              {item.icon}
+              <div className="ml-4 text-left">
+                <p className="text-base font-medium text-gray-600">
+                  {item.label}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {posts.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{item.count}</p>
               </div>
-            </div>
-          </button>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("published")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <Eye className="w-8 h-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Đã đăng</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {posts.filter((p) => p.status === "published").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("hidden")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <EyeOff className="w-8 h-8 text-gray-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Đã ẩn</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {posts.filter((p) => p.status === "hidden").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("reported")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <AlertTriangle className="w-8 h-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Bị báo cáo</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {posts.filter((p) => p.status === "reported").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Filters */}

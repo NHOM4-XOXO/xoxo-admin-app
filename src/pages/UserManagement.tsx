@@ -139,79 +139,47 @@ export default function UserManagement() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByRole("all")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <Users className="w-8 h-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Tổng người dùng
+        {[
+          {
+            icon: <Users className="w-10 h-10 text-blue-600" />,
+            label: "Tổng người dùng",
+            count: users.length,
+            onClick: () => handleFilterByRole("all"),
+          },
+          {
+            icon: <UserCheck className="w-10 h-10 text-green-600" />,
+            label: "Đang hoạt động",
+            count: users.filter((u) => u.status === "active").length,
+            onClick: () => handleFilterByStatus("active"),
+          },
+          {
+            icon: <UserX className="w-10 h-10 text-gray-600" />,
+            label: "Đã khoá",
+            count: users.filter((u) => u.status === "banned").length,
+            onClick: () => handleFilterByStatus("banned"),
+          },
+          {
+            icon: <ShieldCheck className="w-10 h-10 text-purple-600" />,
+            label: "Quản trị viên",
+            count: users.filter((u) => u.role === "admin").length,
+            onClick: () => handleFilterByRole("admin"),
+          },
+        ].map((item, index) => (
+          <div key={index}>
+            <button
+              onClick={item.onClick}
+              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+            >
+              {item.icon}
+              <div className="ml-4 text-left">
+                <p className="text-base font-medium text-gray-600">
+                  {item.label}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{item.count}</p>
               </div>
-            </div>
-          </button>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("active")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <UserCheck className="w-8 h-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Đang hoạt động
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.filter((u) => u.status === "active").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByStatus("banned")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <UserX className="w-8 h-8 text-gray-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Đã khoá</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.filter((u) => u.status === "banned").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <button
-            onClick={() => handleFilterByRole("admin")}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-left w-full hover:shadow-md transition"
-          >
-            <div className="flex items-center">
-              <ShieldCheck className="w-8 h-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Quản trị viên
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.filter((u) => u.role === "admin").length}
-                </p>
-              </div>
-            </div>
-          </button>
-        </div>
+            </button>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
