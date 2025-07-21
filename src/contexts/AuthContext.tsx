@@ -16,6 +16,11 @@ interface AuthContextType {
   ) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
+  resetPassword: (
+    email: string,
+    token: string,
+    newPassword: string
+  ) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -111,9 +116,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.removeItem("adminAuth");
   };
 
+  // TODO: Reset password function
+  const resetPassword = async (
+    email: string,
+    token: string,
+    newPassword: string
+  ): Promise<boolean> => {
+    console.log(
+      `Mock Reset Password: Email: ${email}, Token: ${token}, New Password: ${newPassword}`
+    );
+
+    // Simulate API call success/failure
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    if (email === "admin@example.com" && token) {
+      console.log("Password reset successful for admin@example.com");
+      return true;
+    } else {
+      console.log("Password reset failed: Invalid email or token.");
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, login, logout, loading }}
+      value={{ isAuthenticated, user, login, logout, loading, resetPassword }}
     >
       {children}
     </AuthContext.Provider>

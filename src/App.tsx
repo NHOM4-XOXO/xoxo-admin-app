@@ -9,6 +9,7 @@ import UserManagement from "./pages/UserManagement";
 import LoginPage from "./pages/LoginPage";
 import PostManagement from "./pages/PostManagement";
 import ReportManagement from "./pages/ReportManagement";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -32,13 +33,14 @@ function AppRoutes() {
   if (loading) {
     return <LoadingScreen />;
   }
-  
+
   return (
     <Routes>
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
       />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/" element={<Navigate to="/dashboard" />} />
       <Route
         path="/dashboard"
