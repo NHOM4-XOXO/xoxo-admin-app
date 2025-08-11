@@ -51,7 +51,7 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4 mb-0">
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-white rounded-lg p-6 w-full max-w-2xl shadow-lg relative"
