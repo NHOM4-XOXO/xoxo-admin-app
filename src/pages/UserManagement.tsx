@@ -23,6 +23,38 @@ import {
 import type { User as UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
+import FilterDropdown from "../components/FilterDropdown";
+import SearchComponent from "../components/SearchComponent";
+
+const optionListRole = [
+  {
+    value: "all",
+    label: "Tất cả vai trò",
+  },
+  {
+    value: "user",
+    label: "Người dùng",
+  },
+  {
+    value: "admin",
+    label: "Quản trị viên",
+  },
+];
+
+const optionListStatus = [
+  {
+    value: "all",
+    label: "Tất cả trạng thái",
+  },
+  {
+    value: "active",
+    label: "Hoạt động",
+  },
+  {
+    value: "banned",
+    label: "Bị cấm",
+  },
+];
 
 export default function UserManagement() {
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
@@ -34,15 +66,11 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
+  const [userToBan, setUserToBan] = useState<UserType | null>(null);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  // const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [pageSize, setPageSize] = useState(5);
 
-  // const { data: users = [], isLoading, error } = useGetUsersPaginatedQuery({
-  // page:currentPage,
-  // limit: pageSize,
-  // });
 
   const filteredUsers = useMemo(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
@@ -68,7 +96,9 @@ export default function UserManagement() {
   const endIndex = startIndex + pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
-  const toggleStatus = async (userId: number) => {
+
+
+  const handleBanUser = async (userId: number) => {
     const user = users.find((u) => u.id === userId);
     if (user) {
       try {
@@ -76,6 +106,7 @@ export default function UserManagement() {
           id: userId,
           status: user.status === "active" ? "banned" : "active",
         }).unwrap();
+        setUserToBan(null);
       } catch (err) {
         console.error("Toggle status failed", err);
       }
@@ -181,34 +212,15 @@ export default function UserManagement() {
           </div>
         ))}
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border rounded-md"
-          placeholder="Tìm kiếm tên hoặc email..."
-        />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-4 py-2 border rounded-md"
-        >
-          <option value="all">Tất cả vai trò</option>
-          <option value="user">Người dùng</option>
-          <option value="admin">Quản trị viên</option>
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-md"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="active">Hoạt động</option>
-          <option value="banned">Bị cấm</option>
-        </select>
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <SearchComponent searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          </div>
+          <FilterDropdown optionList={optionListRole} filter={roleFilter} setFilter={setRoleFilter} />
+          <FilterDropdown optionList={optionListStatus} filter={statusFilter} setFilter={setStatusFilter} />
+        </div>
       </div>
-
       <div className="bg-white shadow rounded overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -241,11 +253,10 @@ export default function UserManagement() {
                 </td>
                 <td className="px-6 py-4 text-sm text-center">
                   <span
-                    className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      user.status === "active"
+                    className={`px-2 py-1 text-xs rounded-full font-medium ${user.status === "active"
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
-                    }`}
+                      }`}
                   >
                     {user.status === "active" ? "Hoạt động" : "Bị cấm"}
                   </span>
@@ -264,9 +275,10 @@ export default function UserManagement() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => toggleStatus(user.id)}
+                    onClick={() => setUserToBan(user)}
                     disabled={isUpdating}
                     className="text-yellow-600 hover:text-yellow-800 disabled:opacity-50"
+                    title={user.status === "active" ? "Khoá người dùng" : "Mở khóa người dùng"}
                   >
                     <Ban className="w-4 h-4" />
                   </button>
@@ -275,6 +287,7 @@ export default function UserManagement() {
                     onClick={() => setUserToDelete(user)}
                     disabled={isDeleting}
                     className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                    title="Xóa người dùng"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -299,6 +312,14 @@ export default function UserManagement() {
             setSelectedUser(null);
             setEditingUser(user);
           }}
+        />
+      )}
+
+      {userToBan && (
+        <ConfirmModal
+          message={`Bạn có chắc chắn muốn khóa người dùng "${userToBan.name}" không?`}
+          onCancel={() => setUserToBan(null)}
+          onConfirm={handleBanUser.bind(null, userToBan.id)}
         />
       )}
 

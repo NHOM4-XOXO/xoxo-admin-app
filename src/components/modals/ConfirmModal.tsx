@@ -12,7 +12,7 @@ export default function ConfirmModal({
   onConfirm,
 }: ConfirmModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4 mb-0">
       <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg relative">
         <button
           onClick={onCancel}
