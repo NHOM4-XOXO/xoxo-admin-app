@@ -90,16 +90,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </div>
                 <button
                   onClick={logout}
-                  className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md"
+                  className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md cursor-pointer"
                 >
                   <LogOut className="h-5 w-5" />
                 </button>
               </div>
               <div className="flex space-x-3">
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
                   <Bell className="w-4 h-4" />
                 </button>
-                <button className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                <button className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                   <Settings className="w-4 h-4" />
                 </button>
               </div>

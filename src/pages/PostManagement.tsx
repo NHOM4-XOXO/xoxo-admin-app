@@ -141,7 +141,7 @@ export default function PostManagement() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600"  />
       </div>
     );
   }
@@ -197,7 +197,7 @@ export default function PostManagement() {
           <div key={index}>
             <button
               onClick={item.onClick}
-              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200 cursor-pointer"
             >
               {item.icon}
               <div className="ml-4 text-left">
@@ -330,7 +330,7 @@ export default function PostManagement() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => viewPostDetails(post)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 hover:text-blue-900 cursor-pointer"
                         title="Xem chi tiết"
                       >
                         <Eye className="w-4 h-4" />
@@ -339,7 +339,7 @@ export default function PostManagement() {
                         <button
                           onClick={() => handleStatusChange(post.id, "hidden")}
                           disabled={isUpdating}
-                          className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50"
+                          className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
                           title="Ẩn bài viết"
                         >
                           <Flag className="w-4 h-4" />
@@ -351,7 +351,7 @@ export default function PostManagement() {
                             handleStatusChange(post.id, "published")
                           }
                           disabled={isUpdating}
-                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                          className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
                           title="Hiển thị bài viết"
                         >
                           <Eye className="w-4 h-4" />
@@ -360,7 +360,7 @@ export default function PostManagement() {
                       <button
                         onClick={() => setPostToDelete(post)}
                         disabled={isDeleting}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
                         title="Xóa bài viết"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -398,17 +398,17 @@ export default function PostManagement() {
                 Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể
                 hoàn tác.
               </p>
-              <div className="flex justify-center space-x-4">
+              <div className="flex justify-center space-x-4 ">
                 <button
                   onClick={() => setPostToDelete(null)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   onClick={handleDeletePost}
                   disabled={isDeleting}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center"
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center cursor-pointer"
                 >
                   {isDeleting && (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -432,7 +432,7 @@ export default function PostManagement() {
                 </h3>
                 <button
                   onClick={() => setShowPostModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   ×
                 </button>

@@ -35,11 +35,11 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
   });
 
   useEffect(() => {
-    if (locations.length === 0) return; 
+    if (locations.length === 0) return;
     Object.entries(user).forEach(([key, value]) => {
       setValue(key as keyof Omit<User, "id">, value);
     });
-  }, [user,locations, setValue]);
+  }, [user, locations, setValue]);
 
   const onSubmit = async (data: Omit<User, "id">) => {
     try {
@@ -165,7 +165,7 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
         <div className="flex justify-end mt-6">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
             disabled={isLoading}
           >
             {isLoading ? "Đang lưu..." : "Lưu"}

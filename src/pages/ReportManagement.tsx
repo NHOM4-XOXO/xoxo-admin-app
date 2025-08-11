@@ -35,10 +35,8 @@ export default function ReportManagement() {
     report: Report | null;
     newStatus: Report["status"] | null;
     reason: Report["reason"] | null;
-    
   } | null>(null);
   const [reason, setReason] = useState("");
-
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
@@ -46,7 +44,9 @@ export default function ReportManagement() {
     setFilteredReports(
       reports.filter((report) => {
         const matchesSearch =
-          removeVietnameseTones(report.author.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones(report.author.toLowerCase()).includes(
+            keyword
+          ) ||
           removeVietnameseTones(report.content.toLowerCase()).includes(keyword);
 
         const matchesStatus =
@@ -60,7 +60,6 @@ export default function ReportManagement() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedReports = filteredReports.slice(startIndex, endIndex);
@@ -87,7 +86,7 @@ export default function ReportManagement() {
         );
     }
   };
-  
+
   const handleStatusChange = async (
     reportId: number,
     newStatus: Report["status"],
@@ -103,7 +102,6 @@ export default function ReportManagement() {
       console.error("Failed to update report status:", error);
     }
   };
-
 
   const handleFilterByStatus = (status: string) => {
     setStatusFilter(status);
@@ -177,7 +175,7 @@ export default function ReportManagement() {
           <div key={index}>
             <button
               onClick={item.onClick}
-              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200 cursor-pointer"
             >
               {item.icon}
               <div className="ml-4 text-left">
@@ -289,7 +287,7 @@ export default function ReportManagement() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => viewReportDetails(report)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 hover:text-blue-900 cursor-pointer"
                         title="Xem chi tiết"
                       >
                         <Eye className="w-4 h-4" />
@@ -305,7 +303,7 @@ export default function ReportManagement() {
                               })
                             }
                             disabled={isUpdating}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                            className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
                             title="Đánh dấu đã xử lý"
                           >
                             <Check className="w-4 h-4" />
@@ -320,7 +318,7 @@ export default function ReportManagement() {
                               })
                             }
                             disabled={isUpdating}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
                             title="Đánh dấu vi phạm"
                           >
                             <X className="w-4 h-4" />
@@ -350,7 +348,7 @@ export default function ReportManagement() {
 
       {/* Report Details Modal */}
       {showReportModal && selectedReport && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600/50 bg-opacity-1/2 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
@@ -359,7 +357,7 @@ export default function ReportManagement() {
                 </h3>
                 <button
                   onClick={() => setShowReportModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   ×
                 </button>
@@ -438,7 +436,7 @@ export default function ReportManagement() {
                           })
                         }
                         disabled={isUpdating}
-                        className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                        className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
                         title="Đánh dấu đã xử lý"
                       >
                         <Check className="w-5 h-5" />
@@ -452,7 +450,7 @@ export default function ReportManagement() {
                           })
                         }
                         disabled={isUpdating}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
                         title="Đánh dấu vi phạm"
                       >
                         <X className="w-5 h-5" />
@@ -481,7 +479,7 @@ export default function ReportManagement() {
         </div>
       )}
       {confirmModal && confirmModal.report && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-gray-600/50 bg-opacity-1/2 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
               Xác nhận hành động
@@ -518,7 +516,7 @@ export default function ReportManagement() {
                   setConfirmModal(null);
                   setReason("");
                 }}
-                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md cursor-pointer"
               >
                 Huỷ
               </button>
@@ -552,7 +550,7 @@ export default function ReportManagement() {
                   setConfirmModal(null);
                   setReason("");
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md cursor-pointer"
               >
                 Xác nhận
               </button>

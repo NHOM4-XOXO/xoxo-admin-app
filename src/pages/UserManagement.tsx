@@ -132,13 +132,13 @@ export default function UserManagement() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
         >
           <Plus className="w-4 h-4 mr-2" /> Thêm người dùng
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 ">
         {[
           {
             icon: <Users className="w-10 h-10 text-blue-600" />,
@@ -168,7 +168,7 @@ export default function UserManagement() {
           <div key={index}>
             <button
               onClick={item.onClick}
-              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200 cursor-pointer"
             >
               {item.icon}
               <div className="ml-4 text-left">
@@ -253,11 +253,11 @@ export default function UserManagement() {
                 <td className="px-6 py-4 text-sm text-gray-600 text-center">
                   {formatDate(user.createdAt)}
                 </td>
-                <td className="px-6 py-4 text-sm space-x-2 text-center">
+                <td className="px-6 py-4 text-sm space-x-2 text-center ">
                   <button
                     type="button"
                     onClick={() => setSelectedUser(user)}
-                    className="text-blue-600 hover:text-blue-900"
+                    className="text-blue-600 hover:text-blue-900 cursor-pointer"
                     title="Xem chi tiết"
                   >
                     <Eye className="w-4 h-4" />
@@ -266,7 +266,7 @@ export default function UserManagement() {
                     type="button"
                     onClick={() => toggleStatus(user.id)}
                     disabled={isUpdating}
-                    className="text-yellow-600 hover:text-yellow-800 disabled:opacity-50"
+                    className="text-yellow-600 hover:text-yellow-800 disabled:opacity-50 cursor-pointer"
                   >
                     <Ban className="w-4 h-4" />
                   </button>
@@ -274,7 +274,7 @@ export default function UserManagement() {
                     type="button"
                     onClick={() => setUserToDelete(user)}
                     disabled={isDeleting}
-                    className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                    className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

@@ -61,7 +61,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
         <button
           onClick={onClose}
           type="button"
-          className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-xl"
+          className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-xl cursor-pointer"
         >
           <X />
         </button>
@@ -168,14 +168,14 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50 cursor-pointer"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
+            className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:opacity-50 flex items-center cursor-pointer"
           >
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Thêm mới
