@@ -8,6 +8,7 @@ import {
   MessageSquare,
   UserPlus,
   ArrowRight,
+  Flag,
 } from "lucide-react";
 import {
   LineChart,
@@ -198,7 +199,7 @@ const Dashboard = () => {
                 onClick={() => navigate("/reports")}
               >
                 <div className="flex items-center">
-                  <AlertTriangle className="w-5 h-5 text-red-600 mr-3" />
+                  <Flag className="w-5 h-5 text-red-600 mr-3" />
                   <div>
                     <p className="font-medium text-gray-900">Xử lý báo cáo</p>
                     <p className="text-sm text-gray-500">
