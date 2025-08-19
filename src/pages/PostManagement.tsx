@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-
   Eye,
   Trash2,
   Flag,
@@ -12,6 +11,7 @@ import {
   AlertTriangle,
   EyeOff,
 } from "lucide-react";
+import Tippy from "@tippyjs/react";
 import {
   useDeletePostMutation,
   useGetPostsQuery,
@@ -22,6 +22,7 @@ import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
 import FilterDropdown from "../components/FilterDropdown";
 import SearchComponent from "../components/SearchComponent";
+import "../index.css";
 
 const optionListStatus = [
   { value: "all", label: "Tất cả trạng  thái" },
@@ -51,8 +52,6 @@ export default function PostManagement() {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
-
-
 
   useEffect(() => {
     setCurrentPage(1);
@@ -224,10 +223,17 @@ export default function PostManagement() {
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <SearchComponent searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+            <SearchComponent
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
           </div>
 
-          <FilterDropdown optionList={optionListStatus} filter={statusFilter} setFilter={setStatusFilter} />
+          <FilterDropdown
+            optionList={optionListStatus}
+            filter={statusFilter}
+            setFilter={setStatusFilter}
+          />
         </div>
       </div>
 
@@ -319,45 +325,89 @@ export default function PostManagement() {
                       <span className="text-sm text-gray-500">Không có</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => viewPostDetails(post)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Xem chi tiết"
+
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+                    <div className="flex space-x-3">
+                      {/* Xem chi tiết */}
+                      <Tippy
+                        content="Xem chi tiết"
+                        placement="bottom"
+                        theme="small-text"
+                        delay={[0, 0]}
+                        hideOnClick={false}
+                        interactive={false}
                       >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {post.status === "published" && (
                         <button
-                          onClick={() => handleStatusChange(post.id, "hidden")}
-                          disabled={isUpdating}
-                          className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50"
-                          title="Ẩn bài viết"
-                        >
-                          <Flag className="w-4 h-4" />
-                        </button>
-                      )}
-                      {post.status === "hidden" && (
-                        <button
-                          onClick={() =>
-                            handleStatusChange(post.id, "published")
-                          }
-                          disabled={isUpdating}
-                          className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                          title="Hiển thị bài viết"
+                          onClick={() => viewPostDetails(post)}
+                          className="text-blue-600 hover:text-blue-900 cursor-pointer"
+                          title="Xem chi tiết"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+                      </Tippy>
+
+                      {/* Ẩn bài viết */}
+                      {post.status === "published" && (
+                        <Tippy
+                          content="Ẩn bài viết"
+                          placement="bottom"
+                          theme="small-text"
+                          delay={[0, 0]}
+                          hideOnClick={false}
+                          interactive={false}
+                        >
+                          <button
+                            onClick={() =>
+                              handleStatusChange(post.id, "hidden")
+                            }
+                            disabled={isUpdating}
+                            className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
+                            title="Ẩn bài viết"
+                          >
+                            <Flag className="w-4 h-4" />
+                          </button>
+                        </Tippy>
                       )}
-                      <button
-                        onClick={() => setPostToDelete(post)}
-                        disabled={isDeleting}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                        title="Xóa bài viết"
+                      {/* Hiển thị bài viết */}
+                      {post.status === "hidden" && (
+                        <Tippy
+                          content="Hiển thị bài viết"
+                          placement="bottom"
+                          theme="small-text"
+                          delay={[0, 0]}
+                          hideOnClick={false}
+                          interactive={false}
+                        >
+                          <button
+                            onClick={() =>
+                              handleStatusChange(post.id, "published")
+                            }
+                            disabled={isUpdating}
+                            className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
+                            title="Hiển thị bài viết"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </Tippy>
+                      )}
+                      {/* Xoá bài viết */}
+                      <Tippy
+                        content="Xoá bài viết"
+                        placement="bottom"
+                        theme="small-text"
+                        hideOnClick={false}
+                        delay={[0, 0]}
+                        interactive={false}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <button
+                          onClick={() => setPostToDelete(post)}
+                          disabled={isDeleting}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                          title="Xóa bài viết"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </Tippy>
                     </div>
                   </td>
                 </tr>

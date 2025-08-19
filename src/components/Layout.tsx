@@ -97,10 +97,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex space-x-3">
                 <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                  <Bell className="w-4 h-4" />
+                  <Bell className="w-4 h-4 cursor-pointer" />
                 </button>
                 <button className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-4 h-4 cursor-pointer" />
                 </button>
               </div>
             </div>
@@ -119,7 +119,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex flex-col h-full bg-white border-r border-gray-200">
         <div className="flex items-center h-16 px-6 border-b border-gray-200">
-          <img src="/logo_xoxo_500px-removebg-preview.png" alt="Logo" className="h-8 w-auto" />
+          <img
+            src="/logo_xoxo_500px-removebg-preview.png"
+            alt="Logo"
+            className="h-8 w-auto"
+          />
           <div className="ml-3 text-lg font-semibold text-gray-900">
             ADMIN PANEL
           </div>
