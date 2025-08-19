@@ -18,6 +18,8 @@ import type { Report } from "../types/Report.type.ts";
 import { removeVietnameseTones } from "../components/removeVietnameseTones.tsx";
 import FilterDropdown from "../components/FilterDropdown.tsx";
 import SearchComponent from "../components/SearchComponent.tsx";
+import Tippy from "@tippyjs/react";
+import "../index.css";
 
 const optionListStatus = [
   { value: "all", label: "Tất cả trạng thái" },
@@ -43,10 +45,8 @@ export default function ReportManagement() {
     report: Report | null;
     newStatus: Report["status"] | null;
     reason: Report["reason"] | null;
-    
   } | null>(null);
   const [reason, setReason] = useState("");
-
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
@@ -54,7 +54,9 @@ export default function ReportManagement() {
     setFilteredReports(
       reports.filter((report) => {
         const matchesSearch =
-          removeVietnameseTones(report.author.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones(report.author.toLowerCase()).includes(
+            keyword
+          ) ||
           removeVietnameseTones(report.content.toLowerCase()).includes(keyword);
 
         const matchesStatus =
@@ -68,7 +70,6 @@ export default function ReportManagement() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedReports = filteredReports.slice(startIndex, endIndex);
@@ -95,7 +96,7 @@ export default function ReportManagement() {
         );
     }
   };
-  
+
   const handleStatusChange = async (
     reportId: number,
     newStatus: Report["status"],
@@ -111,7 +112,6 @@ export default function ReportManagement() {
       console.error("Failed to update report status:", error);
     }
   };
-
 
   const handleFilterByStatus = (status: string) => {
     setStatusFilter(status);
@@ -203,10 +203,17 @@ export default function ReportManagement() {
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <SearchComponent searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+            <SearchComponent
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
           </div>
 
-          <FilterDropdown optionList={optionListStatus} filter={statusFilter} setFilter={setStatusFilter} />
+          <FilterDropdown
+            optionList={optionListStatus}
+            filter={statusFilter}
+            setFilter={setStatusFilter}
+          />
         </div>
       </div>
 
@@ -279,13 +286,19 @@ export default function ReportManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button
-                        onClick={() => viewReportDetails(report)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Xem chi tiết"
+                      <Tippy
+                        content="Xem chi tiết"
+                        theme="small-text"
+                        placement="bottom"
                       >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                        <button
+                          onClick={() => viewReportDetails(report)}
+                          className="text-blue-600 hover:text-blue-900 cursor-pointer"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </Tippy>
                       {report.status === "hidden" && (
                         <>
                           <button
