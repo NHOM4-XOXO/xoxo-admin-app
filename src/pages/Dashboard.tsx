@@ -160,7 +160,7 @@ const Dashboard = () => {
               ))}
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center ">
+              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center cursor-pointer">
                 Xem tất cả hoạt động
                 <ArrowRight className="w-4 h-4 ml-1" />
               </button>

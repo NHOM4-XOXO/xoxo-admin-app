@@ -182,7 +182,7 @@ export default function UserManagement() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
         <input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -192,7 +192,7 @@ export default function UserManagement() {
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-4 py-2 border rounded-md"
+          className="px-4 py-2 border rounded-md cursor-pointer"
         >
           <option value="all">Tất cả vai trò</option>
           <option value="user">Người dùng</option>
@@ -201,7 +201,7 @@ export default function UserManagement() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-md"
+          className="px-4 py-2 border rounded-md cursor-pointer"
         >
           <option value="all">Tất cả trạng thái</option>
           <option value="active">Hoạt động</option>
