@@ -23,40 +23,9 @@ import {
 import type { User as UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
-import FilterDropdown from "../components/FilterDropdown";
-import SearchComponent from "../components/SearchComponent";
 import Tippy from "@tippyjs/react";
 import "../index.css";
 
-const optionListRole = [
-  {
-    value: "all",
-    label: "Tất cả vai trò",
-  },
-  {
-    value: "user",
-    label: "Người dùng",
-  },
-  {
-    value: "admin",
-    label: "Quản trị viên",
-  },
-];
-
-const optionListStatus = [
-  {
-    value: "all",
-    label: "Tất cả trạng thái",
-  },
-  {
-    value: "active",
-    label: "Hoạt động",
-  },
-  {
-    value: "banned",
-    label: "Bị cấm",
-  },
-];
 
 export default function UserManagement() {
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
@@ -162,13 +131,13 @@ export default function UserManagement() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
         >
           <Plus className="w-4 h-4 mr-2" /> Thêm người dùng
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 ">
         {[
           {
             icon: <Users className="w-10 h-10 text-blue-600" />,
@@ -198,7 +167,7 @@ export default function UserManagement() {
           <div key={index}>
             <button
               onClick={item.onClick}
-              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200"
+              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200 cursor-pointer"
             >
               {item.icon}
               <div className="ml-4 text-left">
@@ -211,25 +180,32 @@ export default function UserManagement() {
           </div>
         ))}
       </div>
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <SearchComponent
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-            />
-          </div>
-          <FilterDropdown
-            optionList={optionListRole}
-            filter={roleFilter}
-            setFilter={setRoleFilter}
-          />
-          <FilterDropdown
-            optionList={optionListStatus}
-            filter={statusFilter}
-            setFilter={setStatusFilter}
-          />
-        </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
+        <input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="px-4 py-2 border rounded-md"
+          placeholder="Tìm kiếm tên hoặc email..."
+        />
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="px-4 py-2 border rounded-md cursor-pointer"
+        >
+          <option value="all">Tất cả vai trò</option>
+          <option value="user">Người dùng</option>
+          <option value="admin">Quản trị viên</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 border rounded-md cursor-pointer"
+        >
+          <option value="all">Tất cả trạng thái</option>
+          <option value="active">Hoạt động</option>
+          <option value="banned">Bị cấm</option>
+        </select>
       </div>
       <div className="bg-white shadow rounded overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">

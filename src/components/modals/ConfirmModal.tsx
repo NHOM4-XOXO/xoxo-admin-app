@@ -16,7 +16,7 @@ export default function ConfirmModal({
       <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg relative">
         <button
           onClick={onCancel}
-          className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-xl"
+          className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-xl cursor-pointer"
         >
           <X />
         </button>
@@ -25,13 +25,13 @@ export default function ConfirmModal({
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onCancel}
-            className="px-4 py-2 border rounded hover:bg-gray-100"
+            className="px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
           >
             Hủy
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer"
           >
            Xác nhận
           </button>
