@@ -41,8 +41,8 @@ const getGenderLabel = (gender?: string) => {
 
 export default function UserDetailModal({ user, onClose, onEdit }: UserDetailModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-3xl shadow-lg relative">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4  mb-0">
+      <div className="bg-white rounded-lg p-6 w-full h-auto max-w-3xl shadow-lg relative ">
         <button
           onClick={onClose}
           className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-xl"

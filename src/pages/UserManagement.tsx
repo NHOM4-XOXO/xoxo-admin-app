@@ -23,6 +23,40 @@ import {
 import type { User as UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
+import FilterDropdown from "../components/FilterDropdown";
+import SearchComponent from "../components/SearchComponent";
+import Tippy from "@tippyjs/react";
+import "../index.css";
+
+const optionListRole = [
+  {
+    value: "all",
+    label: "Tất cả vai trò",
+  },
+  {
+    value: "user",
+    label: "Người dùng",
+  },
+  {
+    value: "admin",
+    label: "Quản trị viên",
+  },
+];
+
+const optionListStatus = [
+  {
+    value: "all",
+    label: "Tất cả trạng thái",
+  },
+  {
+    value: "active",
+    label: "Hoạt động",
+  },
+  {
+    value: "banned",
+    label: "Bị cấm",
+  },
+];
 
 export default function UserManagement() {
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
@@ -34,15 +68,10 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
+  const [userToBan, setUserToBan] = useState<UserType | null>(null);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  // const [filteredUsers, setFilteredUsers] = useState<UserType[]>([]);
   const [pageSize, setPageSize] = useState(5);
-
-  // const { data: users = [], isLoading, error } = useGetUsersPaginatedQuery({
-  // page:currentPage,
-  // limit: pageSize,
-  // });
 
   const filteredUsers = useMemo(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
@@ -68,7 +97,7 @@ export default function UserManagement() {
   const endIndex = startIndex + pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
-  const toggleStatus = async (userId: number) => {
+  const handleBanUser = async (userId: number) => {
     const user = users.find((u) => u.id === userId);
     if (user) {
       try {
@@ -76,6 +105,7 @@ export default function UserManagement() {
           id: userId,
           status: user.status === "active" ? "banned" : "active",
         }).unwrap();
+        setUserToBan(null);
       } catch (err) {
         console.error("Toggle status failed", err);
       }
@@ -208,7 +238,6 @@ export default function UserManagement() {
           <option value="banned">Bị cấm</option>
         </select>
       </div>
-
       <div className="bg-white shadow rounded overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -253,31 +282,71 @@ export default function UserManagement() {
                 <td className="px-6 py-4 text-sm text-gray-600 text-center">
                   {formatDate(user.createdAt)}
                 </td>
-                <td className="px-6 py-4 text-sm space-x-2 text-center ">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedUser(user)}
-                    className="text-blue-600 hover:text-blue-900 cursor-pointer"
-                    title="Xem chi tiết"
+                <td className="px-6 py-4 text-sm space-x-2 text-center">
+                  <Tippy
+                    content="Xem chi tiết"
+                    placement="bottom"
+                    theme="small-text"
+                    delay={[0, 0]}
+                    hideOnClick={false}
+                    interactive={false}
                   >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleStatus(user.id)}
-                    disabled={isUpdating}
-                    className="text-yellow-600 hover:text-yellow-800 disabled:opacity-50 cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUser(user)}
+                      className="text-blue-600 hover:text-blue-900 cursor-pointer"
+                      title="Xem chi tiết"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </Tippy>
+
+                  <Tippy
+                    content={
+                      user.status === "active"
+                        ? "Khoá người dùng"
+                        : "Mở khóa người dùng"
+                    }
+                    placement="bottom"
+                    theme="small-text"
+                    // animation="shift-away"
+                    delay={[0, 0]}
+                    hideOnClick={false}
+                    interactive={false}
                   >
-                    <Ban className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUserToDelete(user)}
-                    disabled={isDeleting}
-                    className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={() => setUserToBan(user)}
+                      disabled={isUpdating}
+                      className="text-yellow-600 hover:text-yellow-800 disabled:opacity-50 cursor-pointer"
+                      title={
+                        user.status === "active"
+                          ? "Khoá người dùng"
+                          : "Mở khóa người dùng"
+                      }
+                    >
+                      <Ban className="w-4 h-4" />
+                    </button>
+                  </Tippy>
+
+                  <Tippy
+                    placement="bottom"
+                    theme="small-text"
+                    content="Xoá người dùng"
+                    delay={[0, 0]}
+                    hideOnClick={false}
+                    interactive={false}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserToDelete(user)}
+                      disabled={isDeleting}
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                      title="Xóa người dùng"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tippy>
                 </td>
               </tr>
             ))}
@@ -299,6 +368,14 @@ export default function UserManagement() {
             setSelectedUser(null);
             setEditingUser(user);
           }}
+        />
+      )}
+
+      {userToBan && (
+        <ConfirmModal
+          message={`Bạn có chắc chắn muốn khóa người dùng "${userToBan.name}" không?`}
+          onCancel={() => setUserToBan(null)}
+          onConfirm={handleBanUser.bind(null, userToBan.id)}
         />
       )}
 

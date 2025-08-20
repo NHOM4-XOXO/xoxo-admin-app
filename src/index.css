@@ -1,1 +1,15 @@
 @import "tailwindcss";
+/* @tailwind components; */
+@tailwind utilities;
+
+.tippy-box[data-theme~="small-text"] {
+  @apply bg-white border border-gray-300 shadow-lg text-gray-700 text-xs;
+}
+
+.tippy-box[data-theme~="small-text"] .tippy-content {
+  @apply py-1 px-2;
+}
+
+.tippy-box[data-theme~="small-text"] .tippy-arrow {
+  @apply text-gray-300;
+}
