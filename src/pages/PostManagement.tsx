@@ -20,16 +20,8 @@ import {
 import type { Post } from "../types/Post.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
-import FilterDropdown from "../components/FilterDropdown";
 import SearchComponent from "../components/SearchComponent";
 import "../index.css";
-
-const optionListStatus = [
-  { value: "all", label: "Tất cả trạng  thái" },
-  { value: "published", label: "Đã đăng" },
-  { value: "hidden", label: "Đã ẩn" },
-  { value: "reported", label: "Bị báo cáo" },
-];
 
 export default function PostManagement() {
   // Redux hooks for data fetching and mutations

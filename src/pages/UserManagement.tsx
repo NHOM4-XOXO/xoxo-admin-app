@@ -23,40 +23,9 @@ import {
 import type { User as UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
-import FilterDropdown from "../components/FilterDropdown";
-import SearchComponent from "../components/SearchComponent";
 import Tippy from "@tippyjs/react";
 import "../index.css";
 
-const optionListRole = [
-  {
-    value: "all",
-    label: "Tất cả vai trò",
-  },
-  {
-    value: "user",
-    label: "Người dùng",
-  },
-  {
-    value: "admin",
-    label: "Quản trị viên",
-  },
-];
-
-const optionListStatus = [
-  {
-    value: "all",
-    label: "Tất cả trạng thái",
-  },
-  {
-    value: "active",
-    label: "Hoạt động",
-  },
-  {
-    value: "banned",
-    label: "Bị cấm",
-  },
-];
 
 export default function UserManagement() {
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();

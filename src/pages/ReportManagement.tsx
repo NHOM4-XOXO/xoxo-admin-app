@@ -16,17 +16,9 @@ import {
 import CustomPagination from "../components/CustomPagination.tsx";
 import type { Report } from "../types/Report.type.ts";
 import { removeVietnameseTones } from "../components/removeVietnameseTones.tsx";
-import FilterDropdown from "../components/FilterDropdown.tsx";
 import SearchComponent from "../components/SearchComponent.tsx";
-import Tippy from "@tippyjs/react";
 import "../index.css";
 
-const optionListStatus = [
-  { value: "all", label: "Tất cả trạng thái" },
-  { value: "hidden", label: "Chờ xử lý" },
-  { value: "published", label: "Đã xử lý" },
-  { value: "reported", label: "Vi phạm" },
-];
 
 export default function ReportManagement() {
   // Redux hooks for data fetching and mutations
