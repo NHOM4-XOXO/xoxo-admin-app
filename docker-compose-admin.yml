@@ -1,7 +1,7 @@
 services:
   web:
-    image: nphoang151/xoxo-app:latest
-    container_name: xoxo-app
+    image: nphoang151/xoxo-admin:latest
+    container_name: xoxo-admin
     restart: always
     ports:
       - "81:3000"
