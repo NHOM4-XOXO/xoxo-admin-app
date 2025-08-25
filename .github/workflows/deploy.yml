@@ -3,7 +3,7 @@ name: CI/CD Deploy Admin (React Vite)
 on:
   push:
     branches:
-      - create/admin
+      - create/admin-ec2
 
 jobs:
   deploy:
