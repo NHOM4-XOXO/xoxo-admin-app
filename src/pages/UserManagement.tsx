@@ -24,8 +24,39 @@ import type { User as UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
 import Tippy from "@tippyjs/react";
+import SearchComponent from "../components/SearchComponent";
+import FilterDropdown from "../components/FilterDropdown";
 import "../index.css";
 
+const optionListRole = [
+  {
+    value: "all",
+    label: "Tất cả vai trò",
+  },
+  {
+    value: "user",
+    label: "Người dùng",
+  },
+  {
+    value: "admin",
+    label: "Quản trị viên",
+  },
+];
+
+const optionListStatus = [
+  {
+    value: "all",
+    label: "Tất cả trạng thái",
+  },
+  {
+    value: "active",
+    label: "Hoạt động",
+  },
+  {
+    value: "banned",
+    label: "Bị cấm",
+  },
+];
 
 export default function UserManagement() {
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
@@ -180,33 +211,27 @@ export default function UserManagement() {
           </div>
         ))}
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
-        <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 border rounded-md"
-          placeholder="Tìm kiếm tên hoặc email..."
-        />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-4 py-2 border rounded-md cursor-pointer"
-        >
-          <option value="all">Tất cả vai trò</option>
-          <option value="user">Người dùng</option>
-          <option value="admin">Quản trị viên</option>
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-md cursor-pointer"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="active">Hoạt động</option>
-          <option value="banned">Bị cấm</option>
-        </select>
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <SearchComponent
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
+          </div>
+          <FilterDropdown
+            optionList={optionListRole}
+            filter={roleFilter}
+            setFilter={setRoleFilter}
+          />
+          <FilterDropdown
+            optionList={optionListStatus}
+            filter={statusFilter}
+            setFilter={setStatusFilter}
+          />
+        </div>
       </div>
+
       <div className="bg-white shadow rounded overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
