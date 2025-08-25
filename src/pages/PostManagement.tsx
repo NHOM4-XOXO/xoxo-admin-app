@@ -22,6 +22,14 @@ import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
 import SearchComponent from "../components/SearchComponent";
 import "../index.css";
+import FilterDropdown from "../components/FilterDropdown";
+
+const optionListStatus = [
+  { value: "all", label: "Tất cả trạng  thái" },
+  { value: "published", label: "Đã đăng" },
+  { value: "hidden", label: "Đã ẩn" },
+  { value: "reported", label: "Bị báo cáo" },
+];
 
 export default function PostManagement() {
   // Redux hooks for data fetching and mutations
@@ -221,16 +229,11 @@ export default function PostManagement() {
             />
           </div>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="published">Đã đăng</option>
-            <option value="hidden">Đã ẩn</option>
-            <option value="reported">Bị báo cáo</option>
-          </select>
+          <FilterDropdown
+            optionList={optionListStatus}
+            filter={statusFilter}
+            setFilter={setStatusFilter}
+          />
         </div>
       </div>
 
@@ -351,7 +354,9 @@ export default function PostManagement() {
                           interactive={false}
                         >
                           <button
-                            onClick={() => handleStatusChange(post.id, "published")}
+                            onClick={() =>
+                              handleStatusChange(post.id, "published")
+                            }
                             disabled={isUpdating}
                             className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
                             title="Hiển thị bài viết"
@@ -371,7 +376,9 @@ export default function PostManagement() {
                           interactive={false}
                         >
                           <button
-                            onClick={() => handleStatusChange(post.id, "hidden")}
+                            onClick={() =>
+                              handleStatusChange(post.id, "hidden")
+                            }
                             disabled={isUpdating}
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
                             title="Ẩn bài viết"

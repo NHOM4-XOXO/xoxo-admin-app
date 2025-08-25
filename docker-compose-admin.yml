@@ -1,0 +1,7 @@
+services:
+  web:
+    image: nphoang151/xoxo-app:latest
+    container_name: xoxo-app
+    restart: always
+    ports:
+      - "81:3000"
