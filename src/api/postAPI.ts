@@ -4,8 +4,9 @@ import type { Post } from "../types/Post.type";
 export const postAPI = createApi({
   reducerPath: "post",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://mock-api-json-sever-2f7e912c356a.herokuapp.com",
+    baseUrl: import.meta.env.VITE_API_URL + "/posts",
   }),
+
   tagTypes: ["Post"],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: false, // Don't refetch on mount

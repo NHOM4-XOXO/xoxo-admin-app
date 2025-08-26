@@ -4,8 +4,9 @@ import type { Report } from "../types/Report.type";
 export const reportApi = createApi({
   reducerPath: "report",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://mock-api-json-sever-2f7e912c356a.herokuapp.com",
+    baseUrl: import.meta.env.VITE_API_URL + "/reports",
   }),
+
   tagTypes: ["Report"],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: false, // Don't refetch on mount

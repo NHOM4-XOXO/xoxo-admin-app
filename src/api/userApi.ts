@@ -4,8 +4,9 @@ import type { User } from "../types/User.type";
 export const userAPI = createApi({
   reducerPath: "user",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://mock-api-json-sever-2f7e912c356a.herokuapp.com",
+    baseUrl: import.meta.env.VITE_API_URL + "/users",
   }),
+
   tagTypes: ["User"],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: false, // Don't refetch on mount

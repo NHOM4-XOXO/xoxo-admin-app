@@ -4,8 +4,9 @@ import type { Activity, ChartData, Stats, TopPost } from "../types/Dashboard.typ
 export const dashboardApi = createApi({
   reducerPath: "dashboard",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://mock-api-json-sever-2f7e912c356a.herokuapp.com",
+    baseUrl: import.meta.env.VITE_API_URL + "/dashboard",
   }),
+
   tagTypes: ["Stats", "Activities", "TopPosts", "ChartData"],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: false, // Don't refetch on mount
