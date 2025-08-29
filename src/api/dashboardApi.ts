@@ -4,8 +4,22 @@ import type { Activity, ChartData, Stats, TopPost } from "../types/Dashboard.typ
 export const dashboardApi = createApi({
   reducerPath: "dashboard",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://mock-api-json-sever-2f7e912c356a.herokuapp.com",
+    baseUrl: import.meta.env.VITE_API_URL + "/dashboard",
+    prepareHeaders: (headers) => {
+      // Lấy token từ localStorage hoặc sessionStorage
+      const authData =
+        localStorage.getItem("adminAuth") ||
+        sessionStorage.getItem("adminAuth");
+      if (authData) {
+        const { token } = JSON.parse(authData);
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
+      }
+      return headers;
+    },
   }),
+
   tagTypes: ["Stats", "Activities", "TopPosts", "ChartData"],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: false, // Don't refetch on mount

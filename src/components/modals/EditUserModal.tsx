@@ -1,49 +1,73 @@
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useUpdateUserMutation } from "../../api/userApi";
-import { useGetLocationsQuery } from "../../api/locationApi";
-import type { User } from "../../types/User.type";
+import type { UserType } from "../../types/User.type";
 import { useEffect } from "react";
 import { X } from "lucide-react";
 import userSchema from "../../schema/UserSchema";
 
+type EditUserFormType = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  roles: "USER" | "ADMIN";
+  enabled: "true" | "false";
+  dateOfBirth: string;
+  gender: "MALE" | "FEMALE" | "OTHER" | "";
+  avatarUrl: string;
+  coverUrl: string;
+  bio: string;
+};
+
 interface EditUserModalProps {
-  user: User;
+  user: UserType;
   onClose: () => void;
 }
 
 export default function EditUserModal({ user, onClose }: EditUserModalProps) {
   const [updateUser, { isLoading }] = useUpdateUserMutation();
-  const { data: locations = [] } = useGetLocationsQuery();
+  // const { data: locations = [] } = useGetLocationsQuery(); // Not used
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<Omit<User, "id">>({
-    resolver: yupResolver(userSchema),
+  } = useForm<EditUserFormType>({
+    resolver: yupResolver(userSchema) as any,
     defaultValues: {
-      name: user.name,
-      email: user.email,
-      bio: user.bio,
-      location: user.location,
-      birthday: user.birthday,
-      gender: user.gender,
-      role: user.role,
-      status: user.status,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      email: user.email ?? "",
+      roles: (user.roles as "USER" | "ADMIN") ?? "USER",
+      enabled: user.enabled ? "true" : "false",
+      dateOfBirth: user.dateOfBirth ?? "",
+      gender: (user.gender as "" | "MALE" | "FEMALE" | "OTHER") ?? "",
+      avatarUrl: user.avatarUrl ?? "",
+      coverUrl: user.coverUrl ?? "",
+      bio: user.bio ?? "",
     },
   });
 
   useEffect(() => {
-    if (locations.length === 0) return;
-    Object.entries(user).forEach(([key, value]) => {
-      setValue(key as keyof Omit<User, "id">, value);
-    });
-  }, [user, locations, setValue]);
+    setValue("firstName", user.firstName ?? "");
+    setValue("lastName", user.lastName ?? "");
+    setValue("email", user.email ?? "");
+    setValue("roles", (user.roles as "USER" | "ADMIN") ?? "USER");
+    setValue("enabled", user.enabled ? "true" : "false");
+    setValue("dateOfBirth", user.dateOfBirth ?? "");
+    setValue("gender", (user.gender as "" | "MALE" | "FEMALE" | "OTHER") ?? "");
+    setValue("avatarUrl", user.avatarUrl ?? "");
+    setValue("coverUrl", user.coverUrl ?? "");
+    setValue("bio", user.bio ?? "");
+  }, [user, setValue]);
 
-  const onSubmit = async (data: Omit<User, "id">) => {
+  const onSubmit = async (data: EditUserFormType) => {
     try {
-      await updateUser({ id: user.id, ...data }).unwrap();
+      await updateUser({
+        id: user.id,
+        ...data,
+        enabled: data.enabled === "true",
+      }).unwrap();
       onClose();
     } catch (error) {
       console.error("Cập nhật thất bại:", error);
@@ -67,14 +91,25 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium">Họ tên</label>
+            <label className="text-sm font-medium">Họ</label>
             <input
-              {...register("name")}
+              {...register("firstName")}
               className="w-full mt-1 border rounded px-3 py-2"
             />
-            <p className="text-red-500 text-sm mt-1">{errors.name?.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {errors.firstName?.message}
+            </p>
           </div>
-
+          <div>
+            <label className="text-sm font-medium">Tên</label>
+            <input
+              {...register("lastName")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            />
+            <p className="text-red-500 text-sm mt-1">
+              {errors.lastName?.message}
+            </p>
+          </div>
           <div>
             <label className="text-sm font-medium">Email</label>
             <input
@@ -84,44 +119,35 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
             />
             <p className="text-red-500 text-sm mt-1">{errors.email?.message}</p>
           </div>
-
           <div>
-            <label className="text-sm font-medium">Giới thiệu</label>
-            <textarea
-              {...register("bio")}
-              rows={2}
-              className="w-full mt-1 border rounded px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Vị trí</label>
+            <label className="text-sm font-medium">Vai trò</label>
             <select
-              {...register("location")}
+              {...register("roles")}
               className="w-full mt-1 border rounded px-3 py-2"
             >
-              <option value="">-- Chọn vị trí --</option>
-              {!locations.find((loc) => loc.name === user.location) &&
-                user.location && (
-                  <option value={String(user.location)}>{user.location}</option>
-                )}
-              {locations.map((loc) => (
-                <option key={loc.code} value={loc.name ?? ""}>
-                  {loc.name}
-                </option>
-              ))}
+              <option value="USER">Người dùng</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+            <p className="text-red-500 text-sm mt-1">{errors.roles?.message}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Trạng thái</label>
+            <select
+              {...register("enabled")}
+              className="w-full mt-1 border rounded px-3 py-2"
+            >
+              <option value="true">Hoạt động</option>
+              <option value="false">Đã khoá</option>
             </select>
           </div>
-
           <div>
             <label className="text-sm font-medium">Ngày sinh</label>
             <input
               type="date"
-              {...register("birthday")}
+              {...register("dateOfBirth")}
               className="w-full mt-1 border rounded px-3 py-2"
             />
           </div>
-
           <div>
             <label className="text-sm font-medium">Giới tính</label>
             <select
@@ -129,36 +155,32 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
               className="w-full mt-1 border rounded px-3 py-2"
             >
               <option value="">-- Chọn giới tính --</option>
-              <option value="male">Nam</option>
-              <option value="female">Nữ</option>
-              <option value="other">Khác</option>
+              <option value="MALE">Nam</option>
+              <option value="FEMALE">Nữ</option>
+              <option value="OTHER">Khác</option>
             </select>
           </div>
-
           <div>
-            <label className="text-sm font-medium">Vai trò</label>
-            <select
-              {...register("role")}
+            <label className="text-sm font-medium">Avatar URL</label>
+            <input
+              {...register("avatarUrl")}
               className="w-full mt-1 border rounded px-3 py-2"
-            >
-              <option value="user">Người dùng</option>
-              <option value="admin">Admin</option>
-            </select>
-            <p className="text-red-500 text-sm mt-1">{errors.role?.message}</p>
+            />
           </div>
-
           <div>
-            <label className="text-sm font-medium">Trạng thái</label>
-            <select
-              {...register("status")}
+            <label className="text-sm font-medium">Cover URL</label>
+            <input
+              {...register("coverUrl")}
               className="w-full mt-1 border rounded px-3 py-2"
-            >
-              <option value="active">Hoạt động</option>
-              <option value="banned">Đã khoá</option>
-            </select>
-            <p className="text-red-500 text-sm mt-1">
-              {errors.status?.message}
-            </p>
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium">Giới thiệu</label>
+            <textarea
+              {...register("bio")}
+              rows={2}
+              className="w-full mt-1 border rounded px-3 py-2"
+            />
           </div>
         </div>
 
