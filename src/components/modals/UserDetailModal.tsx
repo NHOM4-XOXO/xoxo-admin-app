@@ -2,19 +2,14 @@ import {
   FileText,
   User,
   Calendar,
-  MapPin,
   Shield,
   CheckCircle,
   Ban,
   Clock,
-  Users,
-  UserPlus,
-  UserCheck,
   Pencil,
-  X
+  X,
 } from "lucide-react";
-import type { User as UserType } from "../../types/User.type";
-
+import type { UserType } from "../../types/User.type";
 
 interface UserDetailModalProps {
   user: UserType;
@@ -27,22 +22,26 @@ const formatDate = (dateString: string) => {
 };
 
 const getGenderLabel = (gender?: string) => {
-  switch (gender) {
-    case "male":
+  switch (gender?.toUpperCase()) {
+    case "MALE":
       return "Nam";
-    case "female":
+    case "FEMALE":
       return "Nữ";
-    case "other":
+    case "OTHER":
       return "Khác";
     default:
       return "Không rõ";
   }
 };
 
-export default function UserDetailModal({ user, onClose, onEdit }: UserDetailModalProps) {
+export default function UserDetailModal({
+  user,
+  onClose,
+  onEdit,
+}: UserDetailModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4  mb-0">
-      <div className="bg-white rounded-lg p-6 w-full h-auto max-w-3xl shadow-lg relative ">
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-3xl shadow-lg relative">
         <button
           onClick={onClose}
           className="absolute top-3 right-4 text-gray-400 hover:text-gray-600 text-xl"
@@ -53,13 +52,16 @@ export default function UserDetailModal({ user, onClose, onEdit }: UserDetailMod
         {/* Header */}
         <div className="flex items-center space-x-4 mb-6">
           <img
-            src={user.avatar}
+            src={user.avatarUrl || "/default-avatar.png"}
             className="w-20 h-20 rounded-full object-cover"
             alt="Avatar"
           />
           <div className="flex-1">
-            <h2 className="text-2xl font-semibold">{user.name}</h2>
+            <h2 className="text-2xl font-semibold">
+              {user.firstName} {user.lastName}
+            </h2>
             <p className="text-sm text-gray-500">{user.email}</p>
+            <p className="text-xs text-gray-400">@{user.username}</p>
           </div>
           {onEdit && (
             <button
@@ -91,21 +93,12 @@ export default function UserDetailModal({ user, onClose, onEdit }: UserDetailMod
               </div>
             </div>
           )}
-          {user.birthday && (
+          {user.dateOfBirth && (
             <div className="flex items-start space-x-2">
               <Calendar className="w-4 h-4 mt-1 text-gray-500" />
               <div>
                 <p className="font-medium">Ngày sinh:</p>
-                <p>{formatDate(user.birthday)}</p>
-              </div>
-            </div>
-          )}
-          {user.location && (
-            <div className="flex items-start space-x-2">
-              <MapPin className="w-4 h-4 mt-1 text-gray-500" />
-              <div>
-                <p className="font-medium">Địa chỉ:</p>
-                <p>{user.location}</p>
+                <p>{formatDate(user.dateOfBirth)}</p>
               </div>
             </div>
           )}
@@ -113,18 +106,18 @@ export default function UserDetailModal({ user, onClose, onEdit }: UserDetailMod
             <Shield className="w-4 h-4 mt-1 text-gray-500" />
             <div>
               <p className="font-medium">Vai trò:</p>
-              <p>{user.role === "admin" ? "Admin" : "Người dùng"}</p>
+              <p>{user.roles === "ADMIN" ? "Quản trị viên" : "Người dùng"}</p>
             </div>
           </div>
           <div className="flex items-start space-x-2">
-            {user.status === "active" ? (
+            {user.enabled ? (
               <CheckCircle className="w-4 h-4 mt-1 text-green-500" />
             ) : (
               <Ban className="w-4 h-4 mt-1 text-red-500" />
             )}
             <div>
               <p className="font-medium">Trạng thái:</p>
-              <p>{user.status === "active" ? "Hoạt động" : "Đã khoá"}</p>
+              <p>{user.enabled ? "Hoạt động" : "Bị cấm"}</p>
             </div>
           </div>
           <div className="flex items-start space-x-2">
@@ -132,27 +125,6 @@ export default function UserDetailModal({ user, onClose, onEdit }: UserDetailMod
             <div>
               <p className="font-medium">Ngày tạo:</p>
               <p>{formatDate(user.createdAt)}</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-2">
-            <Users className="w-4 h-4 mt-1 text-gray-500" />
-            <div>
-              <p className="font-medium">Bạn bè:</p>
-              <p>{user.friends?.length ?? 0}</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-2">
-            <UserPlus className="w-4 h-4 mt-1 text-gray-500" />
-            <div>
-              <p className="font-medium">Followers:</p>
-              <p>{user.followers?.length ?? 0}</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-2">
-            <UserCheck className="w-4 h-4 mt-1 text-gray-500" />
-            <div>
-              <p className="font-medium">Following:</p>
-              <p>{user.following?.length ?? 0}</p>
             </div>
           </div>
         </div>

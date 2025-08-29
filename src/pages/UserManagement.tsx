@@ -1,3 +1,5 @@
+// UserManagement.tsx
+
 import { useEffect, useMemo, useState } from "react";
 import {
   Eye,
@@ -9,6 +11,8 @@ import {
   UserCheck,
   UserX,
   ShieldCheck,
+  Pencil,
+  CheckCircle,
 } from "lucide-react";
 import AddUserModal from "../components/modals/AddUserModal";
 import ConfirmModal from "../components/modals/ConfirmModal";
@@ -16,52 +20,41 @@ import UserDetailModal from "../components/modals/UserDetailModal";
 import EditUserModal from "../components/modals/EditUserModal";
 import {
   useDeleteUserMutation,
-  // useGetUsersPaginatedQuery,
   useGetUsersQuery,
   useUpdateUserMutation,
 } from "../api/userApi";
-import type { User as UserType } from "../types/User.type";
+import type { UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
-import Tippy from "@tippyjs/react";
 import SearchComponent from "../components/SearchComponent";
 import FilterDropdown from "../components/FilterDropdown";
 import "../index.css";
 
 const optionListRole = [
-  {
-    value: "all",
-    label: "Tất cả vai trò",
-  },
-  {
-    value: "user",
-    label: "Người dùng",
-  },
-  {
-    value: "admin",
-    label: "Quản trị viên",
-  },
+  { value: "all", label: "Tất cả vai trò" },
+  { value: "user", label: "Người dùng" },
+  { value: "admin", label: "Quản trị viên" },
 ];
 
 const optionListStatus = [
-  {
-    value: "all",
-    label: "Tất cả trạng thái",
-  },
-  {
-    value: "active",
-    label: "Hoạt động",
-  },
-  {
-    value: "banned",
-    label: "Bị cấm",
-  },
+  { value: "all", label: "Tất cả trạng thái" },
+  { value: "active", label: "Hoạt động" },
+  { value: "banned", label: "Bị khóa" },
 ];
 
 export default function UserManagement() {
-  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
-  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-  const { data: users = [], isLoading, error } = useGetUsersQuery();
+  const [updateUser] = useUpdateUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
+
+  const { data, isLoading, error, refetch } = useGetUsersQuery();
+  let users: UserType[] = [];
+  if (Array.isArray(data)) {
+    users = data;
+  } else if (data && Array.isArray((data as any).data)) {
+    users = (data as any).data;
+  }
+  console.log("users", users);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -73,15 +66,25 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
 
+  // lọc danh sách
   const filteredUsers = useMemo(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     return users.filter((user) => {
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
       const matchesSearch =
-        removeVietnameseTones(user.name.toLowerCase()).includes(keyword) ||
+        removeVietnameseTones(fullName.toLowerCase()).includes(keyword) ||
         removeVietnameseTones(user.email.toLowerCase()).includes(keyword);
+
       const matchesStatus =
-        statusFilter === "all" || user.status === statusFilter;
-      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+        statusFilter === "all" ||
+        (statusFilter === "active" && user.enabled) ||
+        (statusFilter === "banned" && !user.enabled);
+
+      const matchesRole =
+        roleFilter === "all" ||
+        (roleFilter === "admin" && user.roles === "ADMIN") ||
+        (roleFilter === "user" && user.roles === "USER");
+
       return matchesSearch && matchesStatus && matchesRole;
     });
   }, [users, searchTerm, statusFilter, roleFilter]);
@@ -90,9 +93,7 @@ export default function UserManagement() {
     setCurrentPage(1);
   }, [statusFilter, roleFilter, searchTerm]);
 
-  {
-    /* config pagination */
-  }
+  // phân trang
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
@@ -103,22 +104,19 @@ export default function UserManagement() {
       try {
         await updateUser({
           id: userId,
-          status: user.status === "active" ? "banned" : "active",
+          enabled: !user.enabled, // toggle trạng thái
         }).unwrap();
         setUserToBan(null);
+        refetch(); // cập nhật lại danh sách user
       } catch (err) {
         console.error("Toggle status failed", err);
+        if (err && typeof err === "object") {
+          alert("API error: " + JSON.stringify(err));
+        }
       }
     }
   };
 
-  const handleFilterByStatus = (status: string) => {
-    setStatusFilter(status);
-  };
-
-  const handleFilterByRole = (role: string) => {
-    setRoleFilter(role);
-  };
   const handleDelete = async () => {
     if (userToDelete) {
       try {
@@ -151,6 +149,7 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -168,31 +167,32 @@ export default function UserManagement() {
         </button>
       </div>
 
+      {/* Thống kê */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 ">
         {[
           {
             icon: <Users className="w-10 h-10 text-blue-600" />,
             label: "Tổng người dùng",
             count: users.length,
-            onClick: () => handleFilterByRole("all"),
+            onClick: () => setRoleFilter("all"),
           },
           {
             icon: <UserCheck className="w-10 h-10 text-green-600" />,
             label: "Đang hoạt động",
-            count: users.filter((u) => u.status === "active").length,
-            onClick: () => handleFilterByStatus("active"),
+            count: users.filter((u) => u.enabled).length,
+            onClick: () => setStatusFilter("active"),
           },
           {
             icon: <UserX className="w-10 h-10 text-gray-600" />,
             label: "Đã khoá",
-            count: users.filter((u) => u.status === "banned").length,
-            onClick: () => handleFilterByStatus("banned"),
+            count: users.filter((u) => !u.enabled).length,
+            onClick: () => setStatusFilter("banned"),
           },
           {
             icon: <ShieldCheck className="w-10 h-10 text-purple-600" />,
             label: "Quản trị viên",
-            count: users.filter((u) => u.role === "admin").length,
-            onClick: () => handleFilterByRole("admin"),
+            count: users.filter((u) => u.roles === "ADMIN").length,
+            onClick: () => setRoleFilter("admin"),
           },
         ].map((item, index) => (
           <div key={index}>
@@ -211,14 +211,14 @@ export default function UserManagement() {
           </div>
         ))}
       </div>
+
+      {/* Bộ lọc */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <SearchComponent
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-            />
-          </div>
+          <SearchComponent
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
           <FilterDropdown
             optionList={optionListRole}
             filter={roleFilter}
@@ -232,6 +232,7 @@ export default function UserManagement() {
         </div>
       </div>
 
+      {/* Table */}
       <div className="bg-white shadow rounded overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -247,113 +248,80 @@ export default function UserManagement() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedUsers.map((user) => (
-              <tr key={user.id}>
-                <td className="px-6 py-4 flex items-center space-x-3">
-                  <img
-                    src={user.avatar}
-                    alt="avatar"
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div>
-                    <div className="font-medium text-gray-900">{user.name}</div>
-                    <div className="text-sm text-gray-500">{user.email}</div>
-                  </div>
+              <tr key={user.id} className="text-center align-middle">
+                <td className="px-6 py-4 font-medium text-gray-900 text-left">
+                  {user.firstName} {user.lastName}
                 </td>
-                <td className="px-6 py-4 text-sm text-center">
-                  {user.role === "admin" ? "Quản trị viên" : "Người dùng"}
-                </td>
-                <td className="px-6 py-4 text-sm text-center">
+                <td className="px-6 py-4 font-semibold">
                   <span
-                    className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      user.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
+                    className={
+                      user.roles === "ADMIN"
+                        ? "text-purple-600 bg-purple-50 px-2 py-1 rounded-full"
+                        : "text-blue-600 bg-blue-50 px-2 py-1 rounded-full"
+                    }
                   >
-                    {user.status === "active" ? "Hoạt động" : "Bị cấm"}
+                    {user.roles}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600 text-center">
-                  {formatDate(user.createdAt)}
-                </td>
-                <td className="px-6 py-4 text-sm space-x-2 text-center">
-                  <Tippy
-                    content="Xem chi tiết"
-                    placement="bottom"
-                    theme="small-text"
-                    delay={[0, 0]}
-                    hideOnClick={false}
-                    interactive={false}
+                <td className="px-6 py-4 font-semibold">
+                  <span
+                    className={
+                      user.enabled
+                        ? "text-green-600 bg-green-50 px-2 py-1 rounded-full"
+                        : "text-gray-600 bg-gray-100 px-2 py-1 rounded-full"
+                    }
                   >
+                    {user.enabled ? "Hoạt động" : "Bị khoá"}
+                  </span>
+                </td>
+                <td className="px-6 py-4 font-semibold">
+                  <span className="text-gray-700 bg-gray-50 px-2 py-1 rounded-full">
+                    {formatDate(user.createdAt)}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-center gap-2">
                     <button
-                      type="button"
+                      className="p-2 rounded-full hover:bg-blue-100 transition"
                       onClick={() => setSelectedUser(user)}
-                      className="text-blue-600 hover:text-blue-900 cursor-pointer"
                       title="Xem chi tiết"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-5 h-5 text-blue-600" />
                     </button>
-                  </Tippy>
-
-                  <Tippy
-                    content={
-                      user.status === "active"
-                        ? "Khoá người dùng"
-                        : "Mở khóa người dùng"
-                    }
-                    placement="bottom"
-                    theme="small-text"
-                    // animation="shift-away"
-                    delay={[0, 0]}
-                    hideOnClick={false}
-                    interactive={false}
-                  >
                     <button
-                      type="button"
+                      className="p-2 rounded-full hover:bg-green-100 transition"
+                      onClick={() => setEditingUser(user)}
+                      title="Sửa"
+                    >
+                      <Pencil className="w-5 h-5 text-green-600" />
+                    </button>
+                    <button
+                      className="p-2 rounded-full hover:bg-yellow-100 transition"
                       onClick={() => setUserToBan(user)}
-                      disabled={isUpdating}
-                      className="text-yellow-600 hover:text-yellow-800 disabled:opacity-50 cursor-pointer"
-                      title={
-                        user.status === "active"
-                          ? "Khoá người dùng"
-                          : "Mở khóa người dùng"
-                      }
+                      title={user.enabled ? "Khóa" : "Mở khóa"}
                     >
-                      <Ban className="w-4 h-4" />
+                      {user.enabled ? (
+                        <Ban className="w-5 h-5 text-yellow-600" />
+                      ) : (
+                        <CheckCircle className="w-5 h-5 text-yellow-600" />
+                      )}
                     </button>
-                  </Tippy>
-
-                  <Tippy
-                    placement="bottom"
-                    theme="small-text"
-                    content="Xoá người dùng"
-                    delay={[0, 0]}
-                    hideOnClick={false}
-                    interactive={false}
-                  >
                     <button
-                      type="button"
+                      className="p-2 rounded-full hover:bg-red-100 transition"
                       onClick={() => setUserToDelete(user)}
-                      disabled={isDeleting}
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
-                      title="Xóa người dùng"
+                      title="Xóa"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5 text-red-600" />
                     </button>
-                  </Tippy>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-
-        {filteredUsers.length === 0 && (
-          <div className="text-center p-6 text-gray-500">
-            Không có người dùng nào.
-          </div>
-        )}
       </div>
 
+      {/* Modal */}
       {selectedUser && (
         <UserDetailModal
           user={selectedUser}
@@ -367,22 +335,23 @@ export default function UserManagement() {
 
       {userToBan && (
         <ConfirmModal
-          message={`Bạn có chắc chắn muốn khóa người dùng "${userToBan.name}" không?`}
+          message={`Bạn có chắc chắn muốn ${
+            userToBan.enabled ? "khóa" : "mở khóa"
+          } người dùng "${userToBan.firstName} ${userToBan.lastName}" không?`}
           onCancel={() => setUserToBan(null)}
-          onConfirm={handleBanUser.bind(null, userToBan.id)}
+          onConfirm={() => handleBanUser(userToBan.id)}
         />
       )}
 
       {userToDelete && (
         <ConfirmModal
-          message={`Bạn có chắc chắn muốn xoá người dùng "${userToDelete.name}" không?`}
+          message={`Bạn có chắc chắn muốn xoá người dùng "${userToDelete.firstName} ${userToDelete.lastName}" không?`}
           onCancel={() => setUserToDelete(null)}
           onConfirm={handleDelete}
         />
       )}
 
       {showAddModal && <AddUserModal onClose={() => setShowAddModal(false)} />}
-
       {editingUser && (
         <EditUserModal
           user={editingUser}
@@ -390,6 +359,7 @@ export default function UserManagement() {
         />
       )}
 
+      {/* Pagination */}
       {filteredUsers.length > 0 && (
         <CustomPagination
           currentPage={currentPage}

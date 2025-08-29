@@ -21,7 +21,9 @@ interface AuthContextType {
     token: string,
     newPassword: string
   ) => Promise<boolean>;
+  refreshAccessToken: () => Promise<string | null>;
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -34,7 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing session on app start
   useEffect(() => {
     const checkAuthState = () => {
       try {
@@ -44,22 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const authData = savedAuth || sessionAuth;
 
         if (authData) {
-          const { user: savedUser } = JSON.parse(authData);
+          const { user: savedUser, token } = JSON.parse(authData);
 
-          // TODO: Check if session is still valid (24 hours for localStorage, session for sessionStorage)
-          // const isValid = savedAuth
-          //   ? Date.now() - timestamp < 24 * 60 * 60 * 1000
-          //   : // 24 hours for remember me
-          //     true; // Session storage is valid until browser closes
-
-          // In development , we'll always consider the session valid
-          const isValid = true;
-
-          if (isValid && savedUser) {
+          if (savedUser && token) {
             setIsAuthenticated(true);
             setUser(savedUser);
           } else {
-            // Clear expired session
             localStorage.removeItem("adminAuth");
             sessionStorage.removeItem("adminAuth");
           }
@@ -76,39 +67,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuthState();
   }, []);
 
-  const login = async (
-    email: string,
-    password: string,
-    rememberMe = false
-  ): Promise<boolean> => {
-    // Mock authentication - replace with real API call
-    if (email === "admin@example.com" && password === "123") {
-      const userData = {
-        name: "Admin User",
-        email: "admin@example.com",
-        role: "admin",
-      };
+  // LOGIN
+const login = async (
+  email: string,
+  password: string,
+  rememberMe = false
+): Promise<boolean> => {
+  try {
+    const res = await fetch(import.meta.env.VITE_API_URL + "/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      credentials: "include", // để BE set cookie refreshToken
+    });
 
-      setIsAuthenticated(true);
-      setUser(userData);
+    if (!res.ok) return false;
 
-      // Save auth state based on remember me preference
-      const authData = {
-        user: userData,
-        timestamp: Date.now(),
-      };
+    const result = await res.json();
+    const { token, email: userEmail, role, tokenType } = result.data || {};
 
-      if (rememberMe) {
-        localStorage.setItem("adminAuth", JSON.stringify(authData));
-      } else {
-        sessionStorage.setItem("adminAuth", JSON.stringify(authData));
-      }
+    if (!token || !userEmail) return false;
 
-      return true;
+    const userData = {
+      name: userEmail.split("@")[0] || "unknown",
+      email: userEmail,
+      role: role ? role.replace(/\[|\]/g, "") : "USER",
+    };
+
+    setIsAuthenticated(true);
+    setUser(userData);
+
+    const authData = {
+      user: userData,
+      token,
+      tokenType,
+      timestamp: Date.now(),
+    };
+
+    if (rememberMe) {
+      localStorage.setItem("adminAuth", JSON.stringify(authData));
+    } else {
+      sessionStorage.setItem("adminAuth", JSON.stringify(authData));
     }
-    return false;
-  };
 
+    return true;
+  } catch (error) {
+    console.error("Login error:", error);
+    return false;
+  }
+};
+
+  // LOGOUT
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
@@ -116,7 +125,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.removeItem("adminAuth");
   };
 
-  // TODO: Reset password function
+  // REFRESH TOKEN
+  const refreshAccessToken = async (): Promise<string | null> => {
+    try {
+      const res = await fetch(
+        import.meta.env.VITE_API_URL + "/api/auth/refresh-token",
+        {
+          method: "POST",
+          credentials: "include", 
+        }
+      );
+
+      if (!res.ok) return null;
+
+      const result = await res.json();
+      const newToken = result?.data?.accessToken; 
+
+      if (!newToken) return null;
+
+      // Cập nhật token mới vào storage
+      const authData =
+        JSON.parse(localStorage.getItem("adminAuth")!) ||
+        JSON.parse(sessionStorage.getItem("adminAuth")!);
+
+      if (authData) {
+        authData.token = newToken;
+
+        if (localStorage.getItem("adminAuth")) {
+          localStorage.setItem("adminAuth", JSON.stringify(authData));
+        } else {
+          sessionStorage.setItem("adminAuth", JSON.stringify(authData));
+        }
+      }
+
+      return newToken;
+    } catch (err) {
+      console.error("Error refreshing token:", err);
+      return null;
+    }
+  };
+
+  // MOCK RESET PASSWORD
   const resetPassword = async (
     email: string,
     token: string,
@@ -126,7 +175,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       `Mock Reset Password: Email: ${email}, Token: ${token}, New Password: ${newPassword}`
     );
 
-    // Simulate API call success/failure
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     if (email === "admin@example.com" && token) {
@@ -140,14 +188,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, login, logout, loading, resetPassword }}
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        logout,
+        loading,
+        resetPassword,
+        refreshAccessToken,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

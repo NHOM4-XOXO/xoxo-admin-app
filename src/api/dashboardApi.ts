@@ -5,6 +5,19 @@ export const dashboardApi = createApi({
   reducerPath: "dashboard",
   baseQuery: fetchBaseQuery({
     baseUrl: import.meta.env.VITE_API_URL + "/dashboard",
+    prepareHeaders: (headers) => {
+      // Lấy token từ localStorage hoặc sessionStorage
+      const authData =
+        localStorage.getItem("adminAuth") ||
+        sessionStorage.getItem("adminAuth");
+      if (authData) {
+        const { token } = JSON.parse(authData);
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
+      }
+      return headers;
+    },
   }),
 
   tagTypes: ["Stats", "Activities", "TopPosts", "ChartData"],

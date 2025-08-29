@@ -2,15 +2,13 @@ import { X, Loader2 } from "lucide-react";
 import { useCreateUserMutation } from "../../api/userApi";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { User } from "../../types/User.type";
+import type { UserType } from "../../types/User.type";
+import userSchema from "../../schema/UserSchema";
 import { useGetLocationsQuery } from "../../api/locationApi";
-import userSchema from "../../schema/UserSchema"; 
 
 interface AddUserModalProps {
   onClose: () => void;
 }
-
-
 
 export default function AddUserModal({ onClose }: AddUserModalProps) {
   const [createUser, { isLoading }] = useCreateUserMutation();
@@ -20,27 +18,27 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Omit<User, "id">>({
+  } = useForm<Omit<UserType, "id">>({
     resolver: yupResolver(userSchema),
     defaultValues: {
-      name: "",
+      username: "",
+      firstName: "",
+      lastName: "",
       email: "",
-      avatar: "/placeholder.svg",
-      coverPhoto: "",
+      roles: "user",
+      enabled: true,
+      dateOfBirth: "",
+      gender: "",
+      avatarUrl: "/placeholder.svg",
+      coverUrl: "",
       bio: "",
       location: "",
-      birthday: "",
-      gender: undefined,
-      role: "user",
-      status: "active",
       createdAt: new Date().toISOString(),
-      friends: [],
-      followers: [],
-      following: [],
+      updatedAt: new Date().toISOString(),
     },
   });
 
-  const onSubmit = async (data: Omit<User, "id">) => {
+  const onSubmit = async (data: Omit<UserType, "id">) => {
     try {
       await createUser({
         ...data,
@@ -69,13 +67,44 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium">Họ tên</label>
+            <label className="text-sm font-medium" htmlFor="firstName">
+              Họ
+            </label>
             <input
-              {...register("name")}
-              className="w-full mt-1 border rounded px-3 py-2"
+              id="firstName"
+              type="text"
+              placeholder="Nhập họ"
+              {...register("firstName")}
+              className={`w-full mt-1 border rounded px-3 py-2 ${
+                errors.firstName ? "border-red-500" : ""
+              }`}
+              autoComplete="off"
             />
-            {errors.name && (
-              <p className="text-red-500 text-sm">{errors.name.message}</p>
+            {errors.firstName && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.firstName.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium" htmlFor="lastName">
+              Tên
+            </label>
+            <input
+              id="lastName"
+              type="text"
+              placeholder="Nhập tên"
+              {...register("lastName")}
+              className={`w-full mt-1 border rounded px-3 py-2 ${
+                errors.lastName ? "border-red-500" : ""
+              }`}
+              autoComplete="off"
+            />
+            {errors.lastName && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.lastName.message}
+              </p>
             )}
           </div>
 
@@ -122,7 +151,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
             <label className="text-sm font-medium">Ngày sinh</label>
             <input
               type="date"
-              {...register("birthday")}
+              {...register("dateOfBirth")}
               className="w-full mt-1 border rounded px-3 py-2"
             />
           </div>
@@ -143,7 +172,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
           <div>
             <label className="text-sm font-medium">Vai trò</label>
             <select
-              {...register("role")}
+              {...register("roles")}
               className="w-full mt-1 border rounded px-3 py-2"
             >
               <option value="user">Người dùng</option>
@@ -151,7 +180,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
             </select>
           </div>
 
-          <div>
+          {/* <div>
             <label className="text-sm font-medium">Trạng thái</label>
             <select
               {...register("status")}
@@ -160,7 +189,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
               <option value="active">Hoạt động</option>
               <option value="banned">Đã khoá</option>
             </select>
-          </div>
+          </div> */}
         </div>
 
         <div className="flex justify-end mt-6 space-x-3">

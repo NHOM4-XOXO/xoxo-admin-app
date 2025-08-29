@@ -1,17 +1,17 @@
-export interface User {
+export type UserType = {
   id: number;
-  name: string;
+  enabled: boolean;
+  username?: string | null;
+  roles: string;
   email: string;
-  avatar?: string;
-  coverPhoto?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  avatarUrl?: string | null;
+  coverUrl?: string | null;
   bio?: string | null;
   location?: string | null;
-  birthday?: string | null;
-  gender?: "male" | "female" | "other" | null;
-  role: "user" | "admin";
-  status: "active" | "banned";
   createdAt: string;
-  friends?: number[] | null;
-  followers?: number[] | null;
-  following?: number[] | null;
-}
+  updatedAt: string;
+};
