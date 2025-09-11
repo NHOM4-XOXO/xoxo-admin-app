@@ -1,68 +1,69 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { Post } from "../types/Post.type";
+import type { PostItemResponse } from "../types/Post.type";
+
+const baseQuery = fetchBaseQuery({
+  baseUrl: import.meta.env.VITE_API_URL + "/api/admin/posts",
+  prepareHeaders: (headers) => {
+    const authData = localStorage.getItem("adminAuth");
+    if (authData) {
+      const { token } = JSON.parse(authData);
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+    }
+    return headers;
+  },
+  credentials: "include",
+});
 
 export const postAPI = createApi({
-  reducerPath: "post",
-  baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_URL + "/posts",
-  }),
-
+  reducerPath: "postAPI",
+  baseQuery,
   tagTypes: ["Post"],
-  keepUnusedDataFor: 60, // Keep data for 60 seconds
-  refetchOnMountOrArgChange: false, // Don't refetch on mount
-  refetchOnFocus: false, // Don't refetch on window focus
-  refetchOnReconnect: false, // Don't refetch on reconnect
   endpoints: (builder) => ({
-    getPosts: builder.query<Post[], void>({
-      query: () => "/posts",
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.map(({ id }) => ({ type: "Post" as const, id })),
-              { type: "Post", id: "LIST" },
-            ]
-          : [{ type: "Post", id: "LIST" }],
+    getPosts: builder.query<PostItemResponse[], void>({
+      query: () => "",
+      providesTags: ["Post"],
     }),
-    getPostById: builder.query<Post, number>({
-      query: (id) => `/posts/${id}`,
-      providesTags: (_, __, id) => [{ type: "Post", id }],
-    }),
-    updatePost: builder.mutation<Post, Partial<Post> & Pick<Post, "id">>({
-      query: ({ id, ...patch }) => ({
-        url: `/posts/${id}`,
-        method: "PATCH",
-        body: patch,
-      }),
-      invalidatesTags: (_, __, { id }) => [{ type: "Post", id }],
-    }),
-    deletePost: builder.mutation<{ success: boolean }, number>({
+    deletePost: builder.mutation<void, number>({
       query: (id) => ({
-        url: `/posts/${id}`,
+        url: `/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: (_, __, id) => [
-        { type: "Post", id },
-        { type: "Post", id: "LIST" },
-      ],
+      invalidatesTags: ["Post"],
     }),
-    createPost: builder.mutation<Post, Omit<Post, "id">>({
-      query: (post) => ({
-        url: "/posts",
+
+    getPostById: builder.query<PostItemResponse, number>({
+      query: (id) => `/${id}`,
+      providesTags: ["Post"],
+    }),
+
+    updatePost: builder.mutation<
+      PostItemResponse,
+      { id: number; status: string }
+    >({
+      query: ({ id, status }) => ({
+        url: `/${id}/status`,
         method: "POST",
-        body: {
-          ...post,
-          createdAt: new Date().toISOString(),
-        },
+        body: { status },
       }),
-      invalidatesTags: [{ type: "Post", id: "LIST" }],
+      invalidatesTags: ["Post"],
     }),
+    // createPost: builder.mutation<PostItemResponse, Partial<PostItemResponse>>({
+    //   query: (body) => ({
+    //     url: `/`,
+    //     method: "POST",
+    //     body,
+    //   }),
+    //   invalidatesTags: ["Post"],
+    // }),
   }),
 });
 
 export const {
   useGetPostsQuery,
+  useDeletePostMutation,
   useGetPostByIdQuery,
   useUpdatePostMutation,
-  useDeletePostMutation,
-  useCreatePostMutation,
+  // useCreatePostMutation,
 } = postAPI;

@@ -17,7 +17,7 @@ import {
   useGetPostsQuery,
   useUpdatePostMutation,
 } from "../api/postAPI";
-import type { Post } from "../types/Post.type";
+import type { PostItemResponse } from "../types/Post.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
 import SearchComponent from "../components/SearchComponent";
@@ -26,24 +26,34 @@ import FilterDropdown from "../components/FilterDropdown";
 
 const optionListStatus = [
   { value: "all", label: "Tất cả trạng  thái" },
-  { value: "published", label: "Đã đăng" },
-  { value: "hidden", label: "Đã ẩn" },
-  { value: "reported", label: "Bị báo cáo" },
+  { value: "ACTIVE", label: "Đã đăng" },
+  { value: "HIDDEN", label: "Đã ẩn" },
+  { value: "DELETE", label: "Đã xóa" },
 ];
 
 export default function PostManagement() {
   // Redux hooks for data fetching and mutations
-  const { data: posts = [], isLoading, error } = useGetPostsQuery();
+  // Nếu response là { statusCode, message, data } thì lấy posts = data?.data || []
+  const { data: postsResponse, isLoading, error } = useGetPostsQuery();
+  const posts: PostItemResponse[] = Array.isArray(postsResponse)
+    ? (postsResponse as PostItemResponse[])
+    : Array.isArray((postsResponse as any)?.data)
+    ? ((postsResponse as any).data as PostItemResponse[])
+    : [];
   const [updatePost, { isLoading: isUpdating }] = useUpdatePostMutation();
   const [deletePost, { isLoading: isDeleting }] = useDeletePostMutation();
 
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPost, setSelectedPost] = useState<PostItemResponse | null>(
+    null
+  );
   const [showPostModal, setShowPostModal] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<Post | null>(null);
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
+  const [postToDelete, setPostToDelete] = useState<PostItemResponse | null>(
+    null
+  );
+  const [filteredPosts, setFilteredPosts] = useState<PostItemResponse[]>([]);
 
   //Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,16 +64,26 @@ export default function PostManagement() {
   const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
 
   useEffect(() => {
-    setCurrentPage(1);
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, searchTerm]);
+
   // Filter posts based on search and filter criteria
   useEffect(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredPosts(
-      posts.filter((post) => {
+      posts.filter((post: PostItemResponse) => {
+        // Tìm kiếm theo tên tác giả hoặc nội dung
+        const authorName = `${post.authorFirstName || ""} ${
+          post.authorLastName || ""
+        }`.trim();
         const matchesSearch =
-          removeVietnameseTones(post.author.toLowerCase()).includes(keyword) ||
-          removeVietnameseTones(post.content.toLowerCase()).includes(keyword);
+          removeVietnameseTones(authorName.toLowerCase()).includes(keyword) ||
+          removeVietnameseTones((post.content || "").toLowerCase()).includes(
+            keyword
+          );
 
         const matchesStatus =
           statusFilter === "all" || post.status === statusFilter;
@@ -72,30 +92,36 @@ export default function PostManagement() {
     );
   }, [posts, searchTerm, statusFilter]);
 
-  const getStatusBadge = (status: Post["status"]) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case "published":
+      case "ACTIVE":
         return (
           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
             Đã đăng
           </span>
         );
-      case "hidden":
+      case "HIDDEN":
         return (
           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
             Đã ẩn
           </span>
         );
-      case "reported":
+      case "DELETE":
         return (
           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-            Bị báo cáo
+            Đã xóa
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+            {status}
           </span>
         );
     }
   };
 
-  // const getStatusText = (status: Post["status"]) => {
+  // const getStatusText = (status: PostItemResponse["status"]) => {
   //   switch (status) {
   //     case "published":
   //       return "Đã đăng";
@@ -114,7 +140,7 @@ export default function PostManagement() {
 
   const handleStatusChange = async (
     postId: number,
-    newStatus: Post["status"]
+    newStatus: PostItemResponse["status"]
   ) => {
     try {
       await updatePost({
@@ -137,7 +163,7 @@ export default function PostManagement() {
     }
   };
 
-  const viewPostDetails = (post: Post) => {
+  const viewPostDetails = (post: PostItemResponse) => {
     setSelectedPost(post);
     setShowPostModal(true);
   };
@@ -149,7 +175,7 @@ export default function PostManagement() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600"  />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -186,20 +212,22 @@ export default function PostManagement() {
           {
             icon: <Eye className="w-10 h-10 text-green-600" />,
             label: "Đã đăng",
-            count: posts.filter((p) => p.status === "published").length,
-            onClick: () => handleFilterByStatus("published"),
+            count: posts.filter((p) => p.status === "ACTIVE").length,
+            onClick: () => handleFilterByStatus("ACTIVE"),
           },
           {
             icon: <EyeOff className="w-10 h-10 text-gray-600" />,
             label: "Đã ẩn",
-            count: posts.filter((p) => p.status === "hidden").length,
-            onClick: () => handleFilterByStatus("hidden"),
+            count: posts.filter((p) => p.status === "HIDDEN").length,
+            onClick: () => handleFilterByStatus("HIDDEN"),
           },
           {
             icon: <AlertTriangle className="w-10 h-10 text-red-600" />,
             label: "Bị báo cáo",
-            count: posts.filter((p) => p.status === "reported").length,
-            onClick: () => handleFilterByStatus("reported"),
+            count: posts.filter(
+              (p: PostItemResponse) => p.status === "DELETE"
+            ).length,
+            onClick: () => handleFilterByStatus("DELETE"),
           },
         ].map((item, index) => (
           <div key={index}>
@@ -270,23 +298,25 @@ export default function PostManagement() {
                     <div className="flex items-start space-x-3">
                       <img
                         className="h-10 w-10 rounded-full flex-shrink-0"
-                        src={post.authorAvatar || "/placeholder.svg"}
-                        alt={post.author}
+                        src={post.authorAvatarUrl || "/placeholder.svg"}
+                        alt={`${post.authorFirstName || ""} ${
+                          post.authorLastName || ""
+                        }`}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-900">
-                          {post.author}
+                          {post.authorFirstName} {post.authorLastName}
+                        </div>
+                        <div className="text-xs text-gray-500 mb-1">
+                          {post.location}
                         </div>
                         <div className="text-sm text-gray-600 line-clamp-2 mt-1">
                           {post.content}
                         </div>
-                        {post.image && (
-                          <div className="mt-2">
-                            <img
-                              className="h-16 w-24 object-cover rounded"
-                              src={post.image || "/placeholder.svg"}
-                              alt="Post image"
-                            />
+                        {/* Nếu có hashtags */}
+                        {post.hashtags && (
+                          <div className="mt-1 text-xs text-blue-600">
+                            #{post.hashtags}
                           </div>
                         )}
                       </div>
@@ -303,23 +333,27 @@ export default function PostManagement() {
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span className="flex items-center">
                           <Heart className="h-3 w-3 mr-1" />
-                          {post.likes}
+                          {post.likeCount}
                         </span>
                         <span className="flex items-center">
                           <MessageSquare className="h-3 w-3 mr-1" />
-                          {post.comments}
+                          {post.commentCount}
                         </span>
                         <span className="flex items-center">
                           <Share className="h-3 w-3 mr-1" />
-                          {post.shares}
+                          {post.shareCount}
+                        </span>
+                        <span className="flex items-center">
+                          <Eye className="h-3 w-3 mr-1" />
+                          {post.viewCount}
                         </span>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {post.reports > 0 ? (
+                    {post.commentCount > 0 ? (
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        {post.reports} báo cáo
+                        {post.commentCount} bình luận
                       </span>
                     ) : (
                       <span className="text-sm text-gray-500">Không có</span>
@@ -344,7 +378,7 @@ export default function PostManagement() {
                         </button>
                       </Tippy>
 
-                      {post.status === "hidden" && (
+                      {post.status === "HIDDEN" && (
                         <Tippy
                           content="Hiển thị bài viết"
                           placement="bottom"
@@ -355,7 +389,7 @@ export default function PostManagement() {
                         >
                           <button
                             onClick={() =>
-                              handleStatusChange(post.id, "published")
+                              handleStatusChange(post.id, "ACTIVE")
                             }
                             disabled={isUpdating}
                             className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
@@ -366,7 +400,7 @@ export default function PostManagement() {
                         </Tippy>
                       )}
 
-                      {post.status === "published" && (
+                      {post.status === "ACTIVE" && (
                         <Tippy
                           content="Ẩn bài viết"
                           placement="bottom"
@@ -377,7 +411,7 @@ export default function PostManagement() {
                         >
                           <button
                             onClick={() =>
-                              handleStatusChange(post.id, "hidden")
+                              handleStatusChange(post.id, "HIDDEN")
                             }
                             disabled={isUpdating}
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
@@ -412,18 +446,6 @@ export default function PostManagement() {
             </tbody>
           </table>
         </div>
-
-        {filteredPosts.length === 0 && (
-          <div className="text-center py-12">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              Không có bài viết
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Không tìm thấy bài viết nào phù hợp với tiêu chí tìm kiếm.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -481,12 +503,15 @@ export default function PostManagement() {
                 <div className="flex items-center space-x-3">
                   <img
                     className="h-12 w-12 rounded-full"
-                    src={selectedPost.authorAvatar || "/placeholder.svg"}
-                    alt={selectedPost.author}
+                    src={selectedPost.authorAvatarUrl || "/placeholder.svg"}
+                    alt={`${selectedPost.authorFirstName || ""} ${
+                      selectedPost.authorLastName || ""
+                    }`}
                   />
                   <div>
                     <h4 className="text-lg font-medium">
-                      {selectedPost.author}
+                      {selectedPost.authorFirstName}{" "}
+                      {selectedPost.authorLastName}
                     </h4>
                     <p className="text-sm text-gray-500">
                       {formatDate(selectedPost.createdAt)}
@@ -498,34 +523,34 @@ export default function PostManagement() {
                   <p className="text-gray-900 whitespace-pre-wrap">
                     {selectedPost.content}
                   </p>
-                  {selectedPost.image && (
-                    <img
-                      className="mt-4 max-w-full h-auto rounded-lg"
-                      src={selectedPost.image || "/placeholder.svg"}
-                      alt="Post content"
-                    />
+                  {selectedPost.hashtags && (
+                    <div className="mt-2 text-xs text-blue-600">
+                      #{selectedPost.hashtags}
+                    </div>
                   )}
+                  <div className="mt-2 text-xs text-gray-500">
+                    Vị trí: {selectedPost.location}
+                  </div>
                 </div>
                 <div className="border-t pt-4 flex items-center justify-between text-sm text-gray-500">
                   <div className="flex items-center space-x-6">
                     <span className="flex items-center">
                       <Heart className="h-4 w-4 mr-1" />
-                      {selectedPost.likes} lượt thích
+                      {selectedPost.likeCount} lượt thích
                     </span>
                     <span className="flex items-center">
                       <MessageSquare className="h-4 w-4 mr-1" />
-                      {selectedPost.comments} bình luận
+                      {selectedPost.commentCount} bình luận
                     </span>
                     <span className="flex items-center">
                       <Share className="h-4 w-4 mr-1" />
-                      {selectedPost.shares} chia sẻ
+                      {selectedPost.shareCount} chia sẻ
+                    </span>
+                    <span className="flex items-center">
+                      <Eye className="h-4 w-4 mr-1" />
+                      {selectedPost.viewCount} lượt xem
                     </span>
                   </div>
-                  {selectedPost.reports > 0 && (
-                    <span className="text-red-600 font-medium">
-                      {selectedPost.reports} báo cáo
-                    </span>
-                  )}
                 </div>
               </div>
             </div>

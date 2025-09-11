@@ -1,13 +1,22 @@
-export interface Post {
+export type PostItemResponse = {
   id: number;
-  author: string;
-  authorAvatar: string;
   content: string;
-  image?: string;
-  createdAt: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  status: "published" | "hidden" | "reported";
-  reports: number;
-}
+  status: string; // hoặc PostStatus nếu có enum
+  type: string; // hoặc PostType nếu có enum
+  location: string;
+  hashtags: string;
+  isPublic: boolean;
+  allowComments: boolean;
+  allowLikes: boolean;
+  allowShares: boolean;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  viewCount: number;
+  authorId: number;
+  authorFirstName: string;
+  authorLastName: string;
+  authorAvatarUrl: string;
+  createdAt: string; // FE nên dùng string ISO
+  updatedAt: string;
+};
