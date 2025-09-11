@@ -24,6 +24,7 @@ import CustomPagination from "../components/CustomPagination";
 import FilterDropdown from "../components/FilterDropdown";
 import SearchComponent from "../components/SearchComponent";
 import "../index.css";
+import ConfirmModal from "../components/modals/ConfirmModal";
 
 const statusOptions = [
   { value: "all", label: "Tất cả trạng thái" },
@@ -108,6 +109,13 @@ export default function GroupManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    message: string;
+    onConfirm: () => Promise<void> | void;
+    colorClass?: string;
+    titleClass?: string;
+  } | null>(null);
+
   useEffect(() => {
     if (currentPage !== 1) setCurrentPage(1);
   }, [statusFilter, privacyFilter, searchTerm]);
@@ -185,15 +193,14 @@ export default function GroupManagement() {
             label: "Đang hoạt động",
             count: groups.filter((g) => g.status === "ACTIVE").length,
             onClick: () => setStatusFilter("ACTIVE"),
-            color: "border-green-200 hover:bg-green-50 hover:border-green-400",
+            color: "border-blue-200 hover:bg-blue-50 hover:border-blue-400",
           },
           {
             icon: <Ban className="w-7 h-7 text-yellow-600 mb-1" />,
             label: "Tạm ngưng",
             count: groups.filter((g) => g.status === "SUSPENDED").length,
             onClick: () => setStatusFilter("SUSPENDED"),
-            color:
-              "border-yellow-200 hover:bg-yellow-50 hover:border-yellow-400",
+            color: "border-blue-200 hover:bg-blue-50 hover:border-blue-400",
           },
         ].map((item, idx) => (
           <button
@@ -218,14 +225,14 @@ export default function GroupManagement() {
             label: "Cấm vĩnh viễn",
             count: groups.filter((g) => g.status === "BANNED").length,
             onClick: () => setStatusFilter("BANNED"),
-            color: "border-red-200 hover:bg-red-50 hover:border-red-400",
+            color: "border-blue-200 hover:bg-blue-50 hover:border-blue-400",
           },
           {
             icon: <Lock className="w-7 h-7 text-gray-600 mb-1" />,
             label: "Lưu trữ",
             count: groups.filter((g) => g.status === "ARCHIVED").length,
             onClick: () => setStatusFilter("ARCHIVED"),
-            color: "border-gray-200 hover:bg-gray-50 hover:border-gray-400",
+            color: "border-blue-200 hover:bg-blue-50 hover:border-blue-400",
           },
           {
             icon: <RefreshCw className="w-7 h-7 text-blue-500 mb-1" />,
@@ -354,9 +361,23 @@ export default function GroupManagement() {
                       {group.status === "ACTIVE" && (
                         <>
                           <button
-                            onClick={() =>
-                              handleStatusChange(group.id, "SUSPENDED")
-                            }
+                            onClick={() => {
+                              const { colorClass, titleClass } =
+                                getStatusColor("SUSPENDED");
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn tạm ngưng nhóm này?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(
+                                    group.id,
+                                    "SUSPENDED"
+                                  );
+                                  setConfirmModal(null);
+                                },
+                                colorClass,
+                                titleClass,
+                              });
+                            }}
                             disabled={isUpdating}
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
                             title="Tạm ngưng nhóm"
@@ -364,9 +385,20 @@ export default function GroupManagement() {
                             <Ban className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() =>
-                              handleStatusChange(group.id, "BANNED")
-                            }
+                            onClick={() => {
+                              const { colorClass, titleClass } =
+                                getStatusColor("BANNED");
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn cấm vĩnh viễn nhóm này?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(group.id, "BANNED");
+                                  setConfirmModal(null);
+                                },
+                                colorClass,
+                                titleClass,
+                              });
+                            }}
                             disabled={isUpdating}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
                             title="Cấm vĩnh viễn"
@@ -374,9 +406,23 @@ export default function GroupManagement() {
                             <Ban className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() =>
-                              handleStatusChange(group.id, "ARCHIVED")
-                            }
+                            onClick={() => {
+                              const { colorClass, titleClass } =
+                                getStatusColor("ARCHIVED");
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn lưu trữ nhóm này?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(
+                                    group.id,
+                                    "ARCHIVED"
+                                  );
+                                  setConfirmModal(null);
+                                },
+                                colorClass,
+                                titleClass,
+                              });
+                            }}
                             disabled={isUpdating}
                             className="text-gray-600 hover:text-gray-900 disabled:opacity-50 cursor-pointer"
                             title="Lưu trữ nhóm"
@@ -388,9 +434,20 @@ export default function GroupManagement() {
                       {group.status === "SUSPENDED" && (
                         <>
                           <button
-                            onClick={() =>
-                              handleStatusChange(group.id, "ACTIVE")
-                            }
+                            onClick={() => {
+                              const { colorClass, titleClass } =
+                                getStatusColor("ACTIVE");
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn kích hoạt lại nhóm này?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(group.id, "ACTIVE");
+                                  setConfirmModal(null);
+                                },
+                                colorClass,
+                                titleClass,
+                              });
+                            }}
                             disabled={isUpdating}
                             className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
                             title="Kích hoạt lại nhóm"
@@ -398,9 +455,20 @@ export default function GroupManagement() {
                             <CheckCircle className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() =>
-                              handleStatusChange(group.id, "BANNED")
-                            }
+                            onClick={() => {
+                              const { colorClass, titleClass } =
+                                getStatusColor("BANNED");
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn cấm vĩnh viễn nhóm này?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(group.id, "BANNED");
+                                  setConfirmModal(null);
+                                },
+                                colorClass,
+                                titleClass,
+                              });
+                            }}
                             disabled={isUpdating}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
                             title="Cấm vĩnh viễn"
@@ -411,9 +479,23 @@ export default function GroupManagement() {
                       )}
                       {group.status === "BANNED" && (
                         <button
-                          onClick={() =>
-                            handleStatusChange(group.id, "UNDER_REVIEW")
-                          }
+                          onClick={() => {
+                            const { colorClass, titleClass } =
+                              getStatusColor("UNDER_REVIEW");
+                            setConfirmModal({
+                              message:
+                                "Bạn có chắc chắn muốn chuyển nhóm sang trạng thái Đang xem xét?",
+                              onConfirm: async () => {
+                                await handleStatusChange(
+                                  group.id,
+                                  "UNDER_REVIEW"
+                                );
+                                setConfirmModal(null);
+                              },
+                              colorClass,
+                              titleClass,
+                            });
+                          }}
                           disabled={isUpdating}
                           className="text-blue-600 hover:text-blue-900 disabled:opacity-50 cursor-pointer"
                           title="Chuyển sang xem xét"
@@ -424,9 +506,20 @@ export default function GroupManagement() {
                       {group.status === "UNDER_REVIEW" && (
                         <>
                           <button
-                            onClick={() =>
-                              handleStatusChange(group.id, "ACTIVE")
-                            }
+                            onClick={() => {
+                              const { colorClass, titleClass } =
+                                getStatusColor("ACTIVE");
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn kích hoạt lại nhóm này?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(group.id, "ACTIVE");
+                                  setConfirmModal(null);
+                                },
+                                colorClass,
+                                titleClass,
+                              });
+                            }}
                             disabled={isUpdating}
                             className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
                             title="Kích hoạt lại nhóm"
@@ -434,9 +527,20 @@ export default function GroupManagement() {
                             <CheckCircle className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() =>
-                              handleStatusChange(group.id, "BANNED")
-                            }
+                            onClick={() => {
+                              const { colorClass, titleClass } =
+                                getStatusColor("BANNED");
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn cấm vĩnh viễn nhóm này?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(group.id, "BANNED");
+                                  setConfirmModal(null);
+                                },
+                                colorClass,
+                                titleClass,
+                              });
+                            }}
                             disabled={isUpdating}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
                             title="Cấm vĩnh viễn"
@@ -447,7 +551,20 @@ export default function GroupManagement() {
                       )}
                       {group.status === "ARCHIVED" && (
                         <button
-                          onClick={() => handleStatusChange(group.id, "ACTIVE")}
+                          onClick={() => {
+                            const { colorClass, titleClass } =
+                              getStatusColor("ACTIVE");
+                            setConfirmModal({
+                              message:
+                                "Bạn có chắc chắn muốn kích hoạt lại nhóm này?",
+                              onConfirm: async () => {
+                                await handleStatusChange(group.id, "ACTIVE");
+                                setConfirmModal(null);
+                              },
+                              colorClass,
+                              titleClass,
+                            });
+                          }}
                           disabled={isUpdating}
                           className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
                           title="Kích hoạt lại nhóm"
@@ -551,6 +668,51 @@ export default function GroupManagement() {
           setPageSize(pageSize);
         }}
       />
+
+      {confirmModal && (
+        <ConfirmModal
+          message={confirmModal.message}
+          onCancel={() => setConfirmModal(null)}
+          onConfirm={confirmModal.onConfirm}
+          colorClass={confirmModal.colorClass}
+          titleClass={confirmModal.titleClass}
+        />
+      )}
     </div>
   );
+}
+
+function getStatusColor(status: GroupStatus) {
+  switch (status) {
+    case "ACTIVE":
+      return {
+        colorClass: "bg-green-600 hover:bg-green-700",
+        titleClass: "text-green-600",
+      };
+    case "SUSPENDED":
+      return {
+        colorClass: "bg-yellow-600 hover:bg-yellow-700",
+        titleClass: "text-yellow-600",
+      };
+    case "BANNED":
+      return {
+        colorClass: "bg-red-600 hover:bg-red-700",
+        titleClass: "text-red-600",
+      };
+    case "UNDER_REVIEW":
+      return {
+        colorClass: "bg-blue-600 hover:bg-blue-700",
+        titleClass: "text-blue-600",
+      };
+    case "ARCHIVED":
+      return {
+        colorClass: "bg-gray-600 hover:bg-gray-700",
+        titleClass: "text-gray-600",
+      };
+    default:
+      return {
+        colorClass: "bg-blue-600 hover:bg-blue-700",
+        titleClass: "text-blue-600",
+      };
+  }
 }

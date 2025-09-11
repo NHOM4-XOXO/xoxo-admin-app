@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Eye,
   Ban,
-  Trash2,
   RefreshCw,
   Plus,
   Users,
@@ -19,7 +18,6 @@ import ConfirmModal from "../components/modals/ConfirmModal";
 import UserDetailModal from "../components/modals/UserDetailModal";
 import EditUserModal from "../components/modals/EditUserModal";
 import {
-  useDeleteUserMutation,
   useGetUsersQuery,
   useUpdateUserMutation,
 } from "../api/userApi";
@@ -44,7 +42,7 @@ const optionListStatus = [
 
 export default function UserManagement() {
   const [updateUser] = useUpdateUserMutation();
-  const [deleteUser] = useDeleteUserMutation();
+
 
   const { data, isLoading, error, refetch } = useGetUsersQuery();
   let users: UserType[] = [];
@@ -60,13 +58,10 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
-  const [userToBan, setUserToBan] = useState<UserType | null>(null);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
 
-  // lọc danh sách
   const filteredUsers = useMemo(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     return users.filter((user) => {
@@ -106,8 +101,8 @@ export default function UserManagement() {
           id: userId,
           enabled: !user.enabled, // toggle trạng thái
         }).unwrap();
-        setUserToBan(null);
-        refetch(); // cập nhật lại danh sách user
+        setConfirmModal(null);
+        refetch();
       } catch (err) {
         console.error("Toggle status failed", err);
         if (err && typeof err === "object") {
@@ -117,16 +112,11 @@ export default function UserManagement() {
     }
   };
 
-  const handleDelete = async () => {
-    if (userToDelete) {
-      try {
-        await deleteUser(userToDelete.id).unwrap();
-        setUserToDelete(null);
-      } catch (err) {
-        console.error("Delete failed", err);
-      }
-    }
-  };
+const [confirmModal, setConfirmModal] = useState<{
+  open: boolean;
+  message: string;
+  onConfirm: () => Promise<void> | void;
+} | null>(null);
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString("vi-VN");
@@ -279,11 +269,11 @@ export default function UserManagement() {
                         : "inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800 text-left"
                     }
                   >
-                    {user.enabled ? "Hoạt động" : "Bị khoá"}
+                    {user.enabled ? "Hoạt động" : "Khoá"}
                   </span>
                 </td>
                 <td className="px-6 py-3 whitespace-nowrap text-left">
-                  <span className="text-gray-700 bg-gray-50 px-2 py-1 rounded-full">
+                  <span className="text-gray-700 bg-gray-50 py-1 rounded-full">
                     {formatDate(user.createdAt)}
                   </span>
                 </td>
@@ -305,7 +295,17 @@ export default function UserManagement() {
                     </button>
                     <button
                       className="text-yellow-600 hover:text-yellow-900 cursor-pointer"
-                      onClick={() => setUserToBan(user)}
+                      onClick={() =>
+                        setConfirmModal({
+                          open: true,
+                          message: `Bạn có chắc chắn muốn ${user.enabled ? "khóa" : "mở khóa"
+                          } người dùng "${user.firstName} ${user.lastName}" không?`,
+                          onConfirm: async () => {
+                            await handleBanUser(user.id);
+                            setConfirmModal(null);
+                          },
+                        })
+                      }
                       title={user.enabled ? "Khóa" : "Mở khóa"}
                     >
                       {user.enabled ? (
@@ -313,13 +313,6 @@ export default function UserManagement() {
                       ) : (
                         <CheckCircle className="w-4 h-4 text-yellow-600" />
                       )}
-                    </button>
-                    <button
-                      className="text-red-600 hover:text-red-900 cursor-pointer"
-                      onClick={() => setUserToDelete(user)}
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
                     </button>
                   </div>
                 </td>
@@ -341,24 +334,6 @@ export default function UserManagement() {
         />
       )}
 
-      {userToBan && (
-        <ConfirmModal
-          message={`Bạn có chắc chắn muốn ${
-            userToBan.enabled ? "khóa" : "mở khóa"
-          } người dùng "${userToBan.firstName} ${userToBan.lastName}" không?`}
-          onCancel={() => setUserToBan(null)}
-          onConfirm={() => handleBanUser(userToBan.id)}
-        />
-      )}
-
-      {userToDelete && (
-        <ConfirmModal
-          message={`Bạn có chắc chắn muốn xoá người dùng "${userToDelete.firstName} ${userToDelete.lastName}" không?`}
-          onCancel={() => setUserToDelete(null)}
-          onConfirm={handleDelete}
-        />
-      )}
-
       {showAddModal && <AddUserModal onClose={() => setShowAddModal(false)} />}
       {editingUser && (
         <EditUserModal
@@ -377,6 +352,14 @@ export default function UserManagement() {
             setCurrentPage(page);
             setPageSize(size);
           }}
+        />
+      )}
+
+      {confirmModal && (
+        <ConfirmModal
+          message={confirmModal.message}
+          onCancel={() => setConfirmModal(null)}
+          onConfirm={confirmModal.onConfirm}
         />
       )}
     </div>
