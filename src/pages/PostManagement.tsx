@@ -23,6 +23,7 @@ import { removeVietnameseTones } from "../components/removeVietnameseTones";
 import SearchComponent from "../components/SearchComponent";
 import "../index.css";
 import FilterDropdown from "../components/FilterDropdown";
+import ConfirmModal from "../components/modals/ConfirmModal";
 
 const optionListStatus = [
   { value: "all", label: "Tất cả trạng  thái" },
@@ -50,9 +51,7 @@ export default function PostManagement() {
     null
   );
   const [showPostModal, setShowPostModal] = useState(false);
-  const [postToDelete, setPostToDelete] = useState<PostItemResponse | null>(
-    null
-  );
+  
   const [filteredPosts, setFilteredPosts] = useState<PostItemResponse[]>([]);
 
   //Pagination state
@@ -92,6 +91,11 @@ export default function PostManagement() {
     );
   }, [posts, searchTerm, statusFilter]);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    message: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ACTIVE":
@@ -121,19 +125,6 @@ export default function PostManagement() {
     }
   };
 
-  // const getStatusText = (status: PostItemResponse["status"]) => {
-  //   switch (status) {
-  //     case "published":
-  //       return "Đã đăng";
-  //     case "hidden":
-  //       return "Đã ẩn";
-  //     case "reported":
-  //       return "Bị báo cáo";
-  //     default:
-  //       return status;
-  //   }
-  // };
-
   const handleFilterByStatus = (status: string) => {
     setStatusFilter(status);
   };
@@ -149,17 +140,6 @@ export default function PostManagement() {
       }).unwrap();
     } catch (error) {
       console.error("Failed to update post status:", error);
-    }
-  };
-
-  const handleDeletePost = async () => {
-    if (postToDelete) {
-      try {
-        await deletePost(postToDelete.id).unwrap();
-        setPostToDelete(null);
-      } catch (error) {
-        console.error("Failed to delete post:", error);
-      }
     }
   };
 
@@ -223,10 +203,9 @@ export default function PostManagement() {
           },
           {
             icon: <AlertTriangle className="w-10 h-10 text-red-600" />,
-            label: "Bị báo cáo",
-            count: posts.filter((p: PostItemResponse) => p.status === "DELETE")
-              .length,
-            onClick: () => handleFilterByStatus("DELETE"),
+            label: "Đã xóa",
+            count: posts.filter((p) => p.status === "DELETED").length,
+            onClick: () => handleFilterByStatus("DELETED"),
           },
         ].map((item, index) => (
           <div key={index}>
@@ -281,9 +260,6 @@ export default function PostManagement() {
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Tương tác
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Báo cáo
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
@@ -349,15 +325,6 @@ export default function PostManagement() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {post.commentCount > 0 ? (
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        {post.commentCount} bình luận
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-500">Không có</span>
-                    )}
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <Tippy
@@ -388,11 +355,18 @@ export default function PostManagement() {
                         >
                           <button
                             onClick={() =>
-                              handleStatusChange(post.id, "ACTIVE")
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn hiển thị bài viết này không?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(post.id, "ACTIVE");
+                                  setConfirmModal(null);
+                                },
+                              })
                             }
                             disabled={isUpdating}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
-                            title="Hiển thị bài viết"
+                            className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
+                            title="Ẩn bài viết"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -410,7 +384,14 @@ export default function PostManagement() {
                         >
                           <button
                             onClick={() =>
-                              handleStatusChange(post.id, "HIDDEN")
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn ẩn bài viết này không?",
+                                onConfirm: async () => {
+                                  await handleStatusChange(post.id, "HIDDEN");
+                                  setConfirmModal(null);
+                                },
+                              })
                             }
                             disabled={isUpdating}
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
@@ -421,23 +402,34 @@ export default function PostManagement() {
                         </Tippy>
                       )}
 
-                      <Tippy
-                        content="Xóa bài viết"
-                        placement="bottom"
-                        theme="small-text"
-                        delay={[0, 0]}
-                        hideOnClick={false}
-                        interactive={false}
-                      >
-                        <button
-                          onClick={() => setPostToDelete(post)}
-                          disabled={isDeleting}
-                          className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
-                          title="Xóa bài viết"
+                      {post.status !== "DELETED" && (
+                        <Tippy
+                          content="Xóa bài viết"
+                          placement="bottom"
+                          theme="small-text"
+                          delay={[0, 0]}
+                          hideOnClick={false}
+                          interactive={false}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </Tippy>
+                          <button
+                            onClick={() =>
+                              setConfirmModal({
+                                message:
+                                  "Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể hoàn tác.",
+                                onConfirm: async () => {
+                                  await deletePost(post.id);
+                                  setConfirmModal(null);
+                                },
+                              })
+                            }
+                            disabled={isDeleting}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                            title="Xóa bài viết"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </Tippy>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -446,41 +438,6 @@ export default function PostManagement() {
           </table>
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {postToDelete && (
-        <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3 text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Xác nhận xóa bài viết
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể
-                hoàn tác.
-              </p>
-              <div className="flex justify-center space-x-4 ">
-                <button
-                  onClick={() => setPostToDelete(null)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleDeletePost}
-                  disabled={isDeleting}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center cursor-pointer"
-                >
-                  {isDeleting && (
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  )}
-                  Xóa
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Post Details Modal */}
       {showPostModal && selectedPost && (
@@ -566,6 +523,13 @@ export default function PostManagement() {
           setPageSize(pageSize);
         }}
       />
+      {confirmModal && (
+        <ConfirmModal
+          message={confirmModal.message}
+          onCancel={() => setConfirmModal(null)}
+          onConfirm={confirmModal.onConfirm}
+        />
+      )}
     </div>
   );
 }
