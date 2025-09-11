@@ -12,6 +12,7 @@ import {
   User,
   Bell,
   Settings,
+  GroupIcon,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Quản lý người dùng", href: "/users", icon: Users },
   { name: "Quản lý bài viết", href: "/posts", icon: FileText },
   { name: "Quản lý báo cáo", href: "/reports", icon: Flag },
+  { name: "Quản lý nhóm", href: "/groups", icon: GroupIcon },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

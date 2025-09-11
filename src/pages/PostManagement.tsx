@@ -6,7 +6,7 @@ import {
   Heart,
   MessageSquare,
   Share,
-  Loader2,
+  RefreshCw,
   FileText,
   AlertTriangle,
   EyeOff,
@@ -96,25 +96,25 @@ export default function PostManagement() {
     switch (status) {
       case "ACTIVE":
         return (
-          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
             Đã đăng
           </span>
         );
       case "HIDDEN":
         return (
-          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">
             Đã ẩn
           </span>
         );
-      case "DELETE":
+      case "DELETED":
         return (
-          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">
             Đã xóa
           </span>
         );
       default:
         return (
-          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">
             {status}
           </span>
         );
@@ -175,7 +175,7 @@ export default function PostManagement() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -224,9 +224,8 @@ export default function PostManagement() {
           {
             icon: <AlertTriangle className="w-10 h-10 text-red-600" />,
             label: "Bị báo cáo",
-            count: posts.filter(
-              (p: PostItemResponse) => p.status === "DELETE"
-            ).length,
+            count: posts.filter((p: PostItemResponse) => p.status === "DELETE")
+              .length,
             onClick: () => handleFilterByStatus("DELETE"),
           },
         ].map((item, index) => (
@@ -248,7 +247,7 @@ export default function PostManagement() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <SearchComponent
@@ -271,22 +270,22 @@ export default function PostManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Bài viết
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Thời gian
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Tương tác
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Báo cáo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
@@ -473,7 +472,7 @@ export default function PostManagement() {
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center cursor-pointer"
                 >
                   {isDeleting && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   )}
                   Xóa
                 </button>

@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { UserType } from "../types/User.type";
+import { refreshAccessToken } from "./refreshTokenHelper";
 
 // Wrapper baseQuery tự động refresh token khi gặp lỗi 401
 const baseQuery = fetchBaseQuery({
@@ -16,28 +17,6 @@ const baseQuery = fetchBaseQuery({
   },
   credentials: "include",
 });
-
-async function refreshAccessToken() {
-  try {
-    const res = await fetch(
-      import.meta.env.VITE_API_URL + "/api/auth/refresh-token",
-      {
-        method: "POST",
-        credentials: "include",
-      }
-    );
-    if (!res.ok) throw new Error("Refresh token failed");
-    const data = await res.json();
-    if (data?.token) {
-      localStorage.setItem("adminAuth", JSON.stringify({ token: data.token }));
-      return data.token;
-    }
-    throw new Error("No token in refresh response");
-  } catch (err) {
-    localStorage.removeItem("adminAuth");
-    return null;
-  }
-}
 
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   let result = await baseQuery(args, api, extraOptions);
@@ -68,14 +47,11 @@ export const userAPI = createApi({
       invalidatesTags: ["User"],
     }),
 
-    updateUser: builder.mutation<
-      UserType,
-      { id: number; enabled: boolean }
-    >({
+    updateUser: builder.mutation<UserType, { id: number; enabled: boolean }>({
       query: ({ id, enabled }) => ({
         url: `/${id}/status`,
         method: "PATCH",
-        body: { enabled: enabled }, 
+        body: { enabled: enabled },
       }),
       invalidatesTags: ["User"],
     }),

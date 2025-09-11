@@ -118,11 +118,20 @@ const login = async (
 };
 
   // LOGOUT
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    localStorage.removeItem("adminAuth");
-    sessionStorage.removeItem("adminAuth");
+  const logout = async () => {
+    try {
+      await fetch(import.meta.env.VITE_API_URL + "/api/auth/logout", {
+        method: "POST",
+        credentials: "include", // BẮT BUỘC để gửi cookie refreshToken
+      });
+    } catch (err) {
+      console.error("Logout API error:", err);
+    } finally {
+      setIsAuthenticated(false);
+      setUser(null);
+      localStorage.removeItem("adminAuth");
+      sessionStorage.removeItem("adminAuth");
+    }
   };
 
   // REFRESH TOKEN

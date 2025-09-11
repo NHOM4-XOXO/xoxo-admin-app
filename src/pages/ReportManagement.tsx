@@ -5,58 +5,79 @@ import {
   X,
   AlertTriangle,
   Clock,
-  Loader2,
+  RefreshCw,
   ShieldAlert,
+  Trash2,
   UserX,
 } from "lucide-react";
 import {
+  useDeleteReportMutation,
   useGetReportsQuery,
   useUpdateReportMutation,
-} from "../api/reportApi.ts";
-import CustomPagination from "../components/CustomPagination.tsx";
-import type { Report } from "../types/Report.type.ts";
-import { removeVietnameseTones } from "../components/removeVietnameseTones.tsx";
-import SearchComponent from "../components/SearchComponent.tsx";
-import FilterDropdown from "../components/FilterDropdown.tsx";
+} from "../api/reportApi";
+import CustomPagination from "../components/CustomPagination";
+import type { ReportItemResponse, ReportStatus } from "../types/Report.type";
+import { removeVietnameseTones } from "../components/removeVietnameseTones";
+import SearchComponent from "../components/SearchComponent";
+import FilterDropdown from "../components/FilterDropdown";
 import "../index.css";
 
-const optionListStatus = [
+const optionListStatus: { value: "all" | ReportStatus; label: string }[] = [
   { value: "all", label: "Tất cả trạng thái" },
-  { value: "hidden", label: "Chờ xử lý" },
-  { value: "published", label: "Đã xử lý" },
-  { value: "reported", label: "Vi phạm" },
+  { value: "PENDING", label: "Chờ xử lý" },
+  { value: "IN_PROGRESS", label: "Đang xử lý" },
+  { value: "RESOLVED", label: "Đã xử lý" },
+  { value: "REJECTED", label: "Vi phạm" },
+  { value: "ESCALATED", label: "Chuyển cấp cao hơn" },
+  { value: "CLOSED", label: "Đã đóng" },
 ];
 
 export default function ReportManagement() {
   // Redux hooks for data fetching and mutations
   const { data: reports = [], isLoading, error } = useGetReportsQuery();
   const [updateReport, { isLoading: isUpdating }] = useUpdateReportMutation();
+  const [deleteReport, { isLoading: isDeleting }] = useDeleteReportMutation();
+  
 
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | ReportStatus>("all");
+  const [selectedReport, setSelectedReport] =
+    useState<ReportItemResponse | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
+  const [filteredReports, setFilteredReports] = useState<ReportItemResponse[]>(
+    []
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
-  const [confirmModal, setConfirmModal] = useState<{
-    report: Report | null;
-    newStatus: Report["status"] | null;
-    reason: Report["reason"] | null;
+  // Modal xác nhận xóa vĩnh viễn
+  const [deleteModal, setDeleteModal] = useState<ReportItemResponse | null>(
+    null
+  );
+  // Modal xác nhận thao tác trạng thái
+  const [statusModal, setStatusModal] = useState<{
+    report: ReportItemResponse;
+    newStatus: ReportStatus;
   } | null>(null);
-  const [reason, setReason] = useState("");
+
+  // Modal adminNotes for rejection
+  const [rejectModal, setRejectModal] = useState<{
+    report: ReportItemResponse;
+    adminNotes: string;
+  } | null>(null);
 
   // Filter reports based on search and filter criteria
   useEffect(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredReports(
-      reports.filter((report) => {
+      reports.filter((report: ReportItemResponse) => {
         const matchesSearch =
-          removeVietnameseTones(report.author.toLowerCase()).includes(
-            keyword
-          ) ||
-          removeVietnameseTones(report.content.toLowerCase()).includes(keyword);
+          removeVietnameseTones(
+            (report.reporterName || "").toLowerCase()
+          ).includes(keyword) ||
+          removeVietnameseTones(
+            (report.reportReason || "").toLowerCase()
+          ).includes(keyword);
 
         const matchesStatus =
           statusFilter === "all" || report.status === statusFilter;
@@ -73,50 +94,70 @@ export default function ReportManagement() {
   const endIndex = startIndex + pageSize;
   const paginatedReports = filteredReports.slice(startIndex, endIndex);
 
-  const getStatusBadge = (status: Report["status"]) => {
+  const getStatusBadge = (status: ReportStatus) => {
     switch (status) {
-      case "published":
+      case "RESOLVED":
         return (
-          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
             Đã xử lý
           </span>
         );
-      case "hidden":
+      case "PENDING":
         return (
-          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
             Chờ xử lý
           </span>
         );
-      case "reported":
+      case "REJECTED":
         return (
-          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">
             Vi phạm
           </span>
         );
+      case "IN_PROGRESS":
+        return (
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+            Đang xử lý
+          </span>
+        );
+      case "ESCALATED":
+        return (
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-purple-100 text-purple-800">
+            Chuyển cấp cao hơn
+          </span>
+        );
+      case "CLOSED":
+        return (
+          <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-gray-200 text-gray-800">
+            Đã đóng
+          </span>
+        );
+      default:
+        return status;
     }
   };
 
   const handleStatusChange = async (
     reportId: number,
-    newStatus: Report["status"],
-    reason?: string // 🆕 thêm lý do nếu có
+    newStatus: ReportStatus,
+    adminNotes?: string
   ) => {
     try {
       await updateReport({
         id: reportId,
         status: newStatus,
-        ...(reason && { reason }), // 🆕 chỉ gửi nếu có reason
+        ...(adminNotes && { adminNotes }),
       }).unwrap();
     } catch (error) {
       console.error("Failed to update report status:", error);
     }
   };
 
-  const handleFilterByStatus = (status: string) => {
+  const handleFilterByStatus = (status: "all" | ReportStatus) => {
     setStatusFilter(status);
   };
 
-  const viewReportDetails = (report: Report) => {
+  const viewReportDetails = (report: ReportItemResponse) => {
     setSelectedReport(report);
     setShowReportModal(true);
   };
@@ -128,7 +169,7 @@ export default function ReportManagement() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -154,65 +195,94 @@ export default function ReportManagement() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[
-          {
-            icon: <ShieldAlert className="w-10 h-10 text-blue-600" />,
-            label: "Tổng báo cáo",
-            count: reports.length,
-            onClick: () => handleFilterByStatus("all"),
-          },
-          {
-            icon: <Clock className="w-10 h-10 text-yellow-600" />,
-            label: "Chờ xử lý",
-            count: reports.filter((r) => r.status === "hidden").length,
-            onClick: () => handleFilterByStatus("hidden"),
-          },
-          {
-            icon: <Check className="w-10 h-10 text-green-600" />,
-            label: "Đã xử lý",
-            count: reports.filter((r) => r.status === "published").length,
-            onClick: () => handleFilterByStatus("published"),
-          },
-          {
-            icon: <UserX className="w-10 h-10 text-red-600" />,
-            label: "Vi phạm",
-            count: reports.filter((r) => r.status === "reported").length,
-            onClick: () => handleFilterByStatus("reported"),
-          },
-        ].map((item, index) => (
-          <div key={index}>
-            <button
-              onClick={item.onClick}
-              className="flex items-center w-full p-8 bg-white rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200 cursor-pointer"
-            >
-              {item.icon}
-              <div className="ml-4 text-left">
-                <p className="text-base font-medium text-gray-600">
-                  {item.label}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">{item.count}</p>
-              </div>
-            </button>
-          </div>
-        ))}
+      {/* Stats 2 hàng 3 nút, bỏ Đã đóng */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+        <button
+          onClick={() => handleFilterByStatus("all")}
+          className="flex flex-col items-center w-full p-3 bg-white rounded-lg border border-blue-200 hover:bg-blue-50 hover:border-blue-400 transition duration-200 cursor-pointer shadow-sm"
+        >
+          <ShieldAlert className="w-7 h-7 text-blue-600 mb-1" />
+          <span className="text-sm font-medium text-gray-600">
+            Tổng báo cáo
+          </span>
+          <span className="text-lg font-bold text-gray-900 mt-1">
+            {reports.length}
+          </span>
+        </button>
+        <button
+          onClick={() => handleFilterByStatus("PENDING")}
+          className="flex flex-col items-center w-full p-3 bg-white rounded-lg border border-yellow-200 hover:bg-yellow-50 hover:border-yellow-400 transition duration-200 cursor-pointer shadow-sm"
+        >
+          <Clock className="w-7 h-7 text-yellow-600 mb-1" />
+          <span className="text-sm font-medium text-gray-600">Chờ xử lý</span>
+          <span className="text-lg font-bold text-gray-900 mt-1">
+            {reports.filter((r) => r.status === "PENDING").length}
+          </span>
+        </button>
+        <button
+          onClick={() => handleFilterByStatus("IN_PROGRESS")}
+          className="flex flex-col items-center w-full p-3 bg-white rounded-lg border border-blue-200 hover:bg-blue-50 hover:border-blue-400 transition duration-200 cursor-pointer shadow-sm"
+        >
+          <RefreshCw className="w-7 h-7 text-blue-600 mb-1 animate-spin-slow" />
+          <span className="text-sm font-medium text-gray-600">Đang xử lý</span>
+          <span className="text-lg font-bold text-gray-900 mt-1">
+            {reports.filter((r) => r.status === "IN_PROGRESS").length}
+          </span>
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <button
+          onClick={() => handleFilterByStatus("RESOLVED")}
+          className="flex flex-col items-center w-full p-3 bg-white rounded-lg border border-green-200 hover:bg-green-50 hover:border-green-400 transition duration-200 cursor-pointer shadow-sm"
+        >
+          <Check className="w-7 h-7 text-green-600 mb-1" />
+          <span className="text-sm font-medium text-gray-600">Đã xử lý</span>
+          <span className="text-lg font-bold text-gray-900 mt-1">
+            {reports.filter((r) => r.status === "RESOLVED").length}
+          </span>
+        </button>
+        <button
+          onClick={() => handleFilterByStatus("REJECTED")}
+          className="flex flex-col items-center w-full p-3 bg-white rounded-lg border border-red-200 hover:bg-red-50 hover:border-red-400 transition duration-200 cursor-pointer shadow-sm"
+        >
+          <UserX className="w-7 h-7 text-red-600 mb-1" />
+          <span className="text-sm font-medium text-gray-600">Vi phạm</span>
+          <span className="text-lg font-bold text-gray-900 mt-1">
+            {reports.filter((r) => r.status === "REJECTED").length}
+          </span>
+        </button>
+        <button
+          onClick={() => handleFilterByStatus("ESCALATED")}
+          className="flex flex-col items-center w-full p-3 bg-white rounded-lg border border-purple-200 hover:bg-purple-50 hover:border-purple-400 transition duration-200 cursor-pointer shadow-sm"
+        >
+          <AlertTriangle className="w-7 h-7 text-purple-600 mb-1" />
+          <span className="text-sm font-medium text-gray-600">
+            Chuyển cấp cao hơn
+          </span>
+          <span className="text-lg font-bold text-gray-900 mt-1">
+            {reports.filter((r) => r.status === "ESCALATED").length}
+          </span>
+        </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="relative">
             <SearchComponent
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
             />
           </div>
-
-          <FilterDropdown
-            optionList={optionListStatus}
-            filter={statusFilter}
-            setFilter={setStatusFilter}
-          />
+          <div>
+            <FilterDropdown
+              optionList={optionListStatus}
+              filter={statusFilter}
+              setFilter={(value) =>
+                setStatusFilter(value as ReportStatus | "all")
+              }
+            />
+          </div>
         </div>
       </div>
 
@@ -222,22 +292,22 @@ export default function ReportManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Báo cáo
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Nội dung
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Thời gian
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Tương tác
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
@@ -247,28 +317,30 @@ export default function ReportManagement() {
                 <tr key={report.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
-                      <img
-                        className="h-10 w-10 rounded-full flex-shrink-0"
-                        src={report.authorAvatar || "/placeholder.svg"}
-                        alt={report.author}
-                      />
+                      <div className="h-10 w-10 rounded-full flex-shrink-0 bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                        {report.reporterName?.charAt(0) || "?"}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-900">
-                          {report.author}
+                          {report.reporterName}
                         </div>
-                        <div className="text-sm text-gray-600 line-clamp-2 mt-1">
-                          Báo cáo từ người dùng
+                        <div className="text-xs text-gray-500 mb-1">
+                          {report.reporterEmail}
+                        </div>
+                        <div className="text-xs text-gray-500 mb-1">
+                          Đối tượng: {report.reportTargetType} #
+                          {report.reportTargetId}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 line-clamp-3">
-                      {report.content}
+                      {report.reportReason}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(report.status)}
+                    {getStatusBadge(report.status as ReportStatus)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {formatDate(report.createdAt)}
@@ -278,59 +350,28 @@ export default function ReportManagement() {
                       <div className="flex items-center space-x-4 text-xs text-gray-500">
                         <span className="flex items-center">
                           <AlertTriangle className="h-3 w-3 mr-1" />
-                          {report.reports} báo cáo
+                          {report.reporterId ? `ID: ${report.reporterId}` : ""}
                         </span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => viewReportDetails(report)}
                         className="text-blue-600 hover:text-blue-900 cursor-pointer"
                         title="Xem chi tiết"
                       >
-                        <button
-                          onClick={() => viewReportDetails(report)}
-                          className="text-blue-600 hover:text-blue-900 cursor-pointer"
-                          title="Xem chi tiết"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
+                        <Eye className="w-4 h-4" />
                       </button>
-                      {report.status === "hidden" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              setConfirmModal({
-                                report,
-                                newStatus: "published",
-                                reason: null,
-                              })
-                            }
-                            disabled={isUpdating}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
-                            title="Đánh dấu đã xử lý"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              setConfirmModal({
-                                report,
-                                newStatus: "reported",
-                                reason: null,
-                              })
-                            }
-                            disabled={isUpdating}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
-                            title="Đánh dấu vi phạm"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
+                      <button
+                        onClick={() => setDeleteModal(report)}
+                        disabled={isDeleting}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                        title="Xóa vĩnh viễn"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -371,15 +412,16 @@ export default function ReportManagement() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <img
-                      className="h-12 w-12 rounded-full"
-                      src={selectedReport.authorAvatar || "/placeholder.svg"}
-                      alt={selectedReport.author}
-                    />
+                    <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                      {selectedReport.reporterName?.charAt(0) || "?"}
+                    </div>
                     <div>
                       <h4 className="text-lg font-medium">
-                        {selectedReport.author}
+                        {selectedReport.reporterName}
                       </h4>
+                      <p className="text-xs text-gray-500 mb-1">
+                        {selectedReport.reporterEmail}
+                      </p>
                       <p className="text-sm text-gray-500">
                         {formatDate(selectedReport.createdAt)}
                       </p>
@@ -397,15 +439,16 @@ export default function ReportManagement() {
                     </span>
                     <div className="mt-1 p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm text-gray-900">
-                        {selectedReport.content}
+                        {selectedReport.reportReason}
                       </p>
-                      {selectedReport.image && (
-                        <img
-                          className="mt-2 max-w-xs h-auto rounded"
-                          src={selectedReport.image}
-                          alt="Reported content"
-                        />
-                      )}
+                    </div>
+                    <span className="text-sm font-medium text-gray-500">
+                      Ghi chú:
+                    </span>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-900">
+                        {selectedReport.adminNotes}
+                      </p>
                     </div>
                   </div>
 
@@ -413,32 +456,41 @@ export default function ReportManagement() {
                     <div className="flex items-center space-x-6">
                       <span className="flex items-center">
                         <AlertTriangle className="h-4 w-4 mr-1" />
-                        {selectedReport.likes} lượt thích
+                        ID người báo cáo: {selectedReport.reporterId}
                       </span>
                       <span className="flex items-center">
-                        {selectedReport.comments} bình luận
-                      </span>
-                      <span className="flex items-center">
-                        {selectedReport.shares} chia sẻ
+                        Đối tượng: {selectedReport.reportTargetType} #
+                        {selectedReport.reportTargetId}
                       </span>
                     </div>
-                    {selectedReport.reports > 0 && (
-                      <span className="text-red-600 font-medium">
-                        {selectedReport.reports} báo cáo
-                      </span>
-                    )}
                   </div>
                 </div>
 
                 <div className="border-t pt-4">
-                  {selectedReport.status === "hidden" ? (
+                  {selectedReport.status === "PENDING" && (
                     <div className="flex justify-end space-x-3">
                       <button
                         onClick={() =>
-                          setConfirmModal({
+                          setStatusModal({
                             report: selectedReport,
-                            newStatus: "published",
-                            reason: null,
+                            newStatus: "IN_PROGRESS",
+                          })
+                        }
+                        disabled={isUpdating}
+                        className="text-blue-600 hover:text-blue-900 disabled:opacity-50 cursor-pointer"
+                        title="Chuyển sang Đang xử lý"
+                      >
+                        <RefreshCw className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                  {selectedReport.status === "IN_PROGRESS" && (
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() =>
+                          setStatusModal({
+                            report: selectedReport,
+                            newStatus: "RESOLVED",
                           })
                         }
                         disabled={isUpdating}
@@ -449,10 +501,9 @@ export default function ReportManagement() {
                       </button>
                       <button
                         onClick={() =>
-                          setConfirmModal({
+                          setRejectModal({
                             report: selectedReport,
-                            newStatus: "reported",
-                            reason: null,
+                            adminNotes: "",
                           })
                         }
                         disabled={isUpdating}
@@ -461,21 +512,68 @@ export default function ReportManagement() {
                       >
                         <X className="w-5 h-5" />
                       </button>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-700 text-right">
-                      Trạng thái hiện tại:{" "}
-                      <span
-                        className={`font-semibold ${
-                          selectedReport.status === "published"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
+                      <button
+                        onClick={() =>
+                          setStatusModal({
+                            report: selectedReport,
+                            newStatus: "ESCALATED",
+                          })
+                        }
+                        disabled={isUpdating}
+                        className="text-purple-600 hover:text-purple-900 disabled:opacity-50 cursor-pointer"
+                        title="Chuyển cấp cao hơn"
                       >
-                        {selectedReport.status === "published"
-                          ? "Đã xử lý"
-                          : "Đã đánh dấu vi phạm"}
-                      </span>
+                        <AlertTriangle className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {selectedReport.status === "ESCALATED" && (
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() =>
+                          setStatusModal({
+                            report: selectedReport,
+                            newStatus: "RESOLVED",
+                          })
+                        }
+                        disabled={isUpdating}
+                        className="text-green-600 hover:text-green-900 disabled:opacity-50 cursor-pointer"
+                        title="Đánh dấu đã xử lý"
+                      >
+                        <Check className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setStatusModal({
+                            report: selectedReport,
+                            newStatus: "REJECTED",
+                          })
+                        }
+                        disabled={isUpdating}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 cursor-pointer"
+                        title="Đánh dấu bị từ chối"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                  {(selectedReport.status === "RESOLVED" ||
+                    selectedReport.status === "REJECTED") && (
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() =>
+                          setStatusModal({
+                            report: selectedReport,
+                            newStatus: "CLOSED",
+                          })
+                        }
+                        disabled={isUpdating}
+                        className="text-gray-600 hover:text-gray-900 disabled:opacity-50 cursor-pointer"
+                        title="Đóng báo cáo"
+                      >
+                        <ShieldAlert className="w-5 h-5" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -484,81 +582,128 @@ export default function ReportManagement() {
           </div>
         </div>
       )}
-      {confirmModal && confirmModal.report && (
-        <div className="fixed inset-0 bg-gray-600/50 bg-opacity-1/2 flex items-center justify-center z-50">
+      {/* Modal xác nhận xóa vĩnh viễn */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-gray-600/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              Xác nhận hành động
+              Xác nhận xóa vĩnh viễn
             </h2>
-            <p className="text-gray-700 mb-2">
-              Bạn có chắc muốn{" "}
-              <span className="font-semibold text-red-600">
-                {confirmModal.newStatus === "reported"
-                  ? "đánh dấu vi phạm"
-                  : "đánh dấu đã xử lý"}
-              </span>{" "}
-              báo cáo này không?
+            <p className="text-gray-700 mb-4">
+              Bạn có chắc chắn muốn{" "}
+              <span className="font-semibold text-red-600">xóa vĩnh viễn</span>{" "}
+              báo cáo này? Hành động này không thể hoàn tác.
             </p>
-
-            {confirmModal.newStatus === "reported" && (
-              <>
-                <label className="block text-sm text-gray-700 mb-1 mt-3">
-                  Lý do <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Nhập lý do gửi đến người dùng..."
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </>
-            )}
-
-            {/* Buttons */}
-            <div className="flex justify-end mt-4 space-x-3">
+            <div className="flex justify-end space-x-3">
               <button
-                onClick={() => {
-                  setConfirmModal(null);
-                  setReason("");
-                }}
+                onClick={() => setDeleteModal(null)}
                 className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md cursor-pointer"
               >
-                Huỷ
+                Hủy
               </button>
               <button
                 onClick={async () => {
-                  if (confirmModal.newStatus === "reported" && !reason.trim()) {
-                    alert("Vui lòng nhập lý do khi đánh dấu vi phạm.");
-                    return;
+                  if (deleteModal) {
+                    await deleteReport(deleteModal.id);
+                    setDeleteModal(null);
                   }
-
-                  if (confirmModal.report && confirmModal.newStatus !== null) {
-                    await handleStatusChange(
-                      confirmModal.report.id,
-                      confirmModal.newStatus,
-                      reason.trim() || undefined
-                    );
-                  }
-
-                  // Nếu đang xem chi tiết thì cập nhật trạng thái luôn
-                  if (
-                    selectedReport?.id &&
-                    confirmModal.report &&
-                    selectedReport.id === confirmModal.report.id
-                  ) {
-                    setSelectedReport({
-                      ...selectedReport,
-                      status: confirmModal.newStatus!,
-                    });
-                  }
-
-                  setConfirmModal(null);
-                  setReason("");
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md cursor-pointer"
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md cursor-pointer"
+              >
+                Xóa vĩnh viễn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xác nhận thao tác trạng thái */}
+      {statusModal && (
+        <div className="fixed inset-0 bg-gray-600/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Xác nhận thay đổi trạng thái
+            </h2>
+            <p className="text-gray-700 mb-4">
+              Bạn có chắc chắn muốn chuyển trạng thái báo cáo này sang
+              <span
+                className={`font-semibold ml-1 ${getStatusColorClass(
+                  statusModal.newStatus
+                )}`}
+              >
+                {getStatusText(statusModal.newStatus)}
+              </span>
+              ?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setStatusModal(null)}
+                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={async () => {
+                  await handleStatusChange(
+                    statusModal.report.id,
+                    statusModal.newStatus
+                  );
+                  setStatusModal(null);
+                  setShowReportModal(false);
+                }}
+                disabled={isUpdating}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md cursor-pointer ${getStatusBgClass(
+                  statusModal.newStatus
+                )}`}
               >
                 Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal adminNotes for rejection */}
+      {rejectModal && (
+        <div className="fixed inset-0 bg-gray-600/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Xác nhận vi phạm
+            </h2>
+            <p className="text-gray-700 mb-4">
+              Nhập lý do vi phạm cho báo cáo này:
+            </p>
+            <textarea
+              className="w-full border rounded-md p-2 mb-4"
+              rows={3}
+              value={rejectModal.adminNotes}
+              onChange={(e) =>
+                setRejectModal({ ...rejectModal, adminNotes: e.target.value })
+              }
+              placeholder="Nhập lý do vi phạm..."
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setRejectModal(null)}
+                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={async () => {
+                  await updateReport({
+                    id: rejectModal.report.id,
+                    adminNotes: rejectModal.adminNotes,
+                    status: "REJECTED",
+                  });
+                  setRejectModal(null);
+                  setShowReportModal(false);
+                }}
+                disabled={isUpdating || !rejectModal.adminNotes.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md cursor-pointer"
+              >
+                Xác nhận vi phạm
               </button>
             </div>
           </div>
@@ -578,4 +723,54 @@ export default function ReportManagement() {
       />
     </div>
   );
+}
+
+// Helper: màu và text trạng thái cho modal xác nhận
+function getStatusColorClass(status: string) {
+  switch (status) {
+    case "IN_PROGRESS":
+      return "text-blue-600";
+    case "RESOLVED":
+      return "text-green-600";
+    case "REJECTED":
+      return "text-red-600";
+    case "ESCALATED":
+      return "text-purple-600";
+    case "CLOSED":
+      return "text-gray-600";
+    default:
+      return "text-blue-600";
+  }
+}
+function getStatusBgClass(status: string) {
+  switch (status) {
+    case "IN_PROGRESS":
+      return "bg-blue-600 hover:bg-blue-700";
+    case "RESOLVED":
+      return "bg-green-600 hover:bg-green-700";
+    case "REJECTED":
+      return "bg-red-600 hover:bg-red-700";
+    case "ESCALATED":
+      return "bg-purple-600 hover:bg-purple-700";
+    case "CLOSED":
+      return "bg-gray-600 hover:bg-gray-700";
+    default:
+      return "bg-blue-600 hover:bg-blue-700";
+  }
+}
+function getStatusText(status: string) {
+  switch (status) {
+    case "IN_PROGRESS":
+      return "Đang xử lý";
+    case "RESOLVED":
+      return "Đã xử lý";
+    case "REJECTED":
+      return "Vi phạm";
+    case "ESCALATED":
+      return "Chuyển cấp cao hơn";
+    case "CLOSED":
+      return "Đã đóng";
+    default:
+      return status;
+  }
 }

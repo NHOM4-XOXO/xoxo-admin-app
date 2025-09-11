@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { PostItemResponse } from "../types/Post.type";
+import { refreshAccessToken } from "./refreshTokenHelper";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL + "/api/admin/posts",
@@ -16,9 +17,20 @@ const baseQuery = fetchBaseQuery({
   credentials: "include",
 });
 
+const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
+  let result = await baseQuery(args, api, extraOptions);
+  if (result?.error?.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      result = await baseQuery(args, api, extraOptions);
+    }
+  }
+  return result;
+};
+
 export const postAPI = createApi({
   reducerPath: "postAPI",
-  baseQuery,
+  baseQuery: baseQueryWithReauth,
   tagTypes: ["Post"],
   endpoints: (builder) => ({
     getPosts: builder.query<PostItemResponse[], void>({
