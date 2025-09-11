@@ -5,7 +5,7 @@ import {
   Eye,
   Ban,
   Trash2,
-  Loader2,
+  RefreshCw,
   Plus,
   Users,
   UserCheck,
@@ -134,7 +134,7 @@ export default function UserManagement() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
+        <RefreshCw className="animate-spin w-8 h-8 text-blue-600" />
       </div>
     );
   }
@@ -212,8 +212,8 @@ export default function UserManagement() {
         ))}
       </div>
 
-      {/* Bộ lọc */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      {/* filter */}
+      <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <SearchComponent
             searchTerm={searchTerm}
@@ -237,81 +237,89 @@ export default function UserManagement() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
                 Người dùng
               </th>
-              <th className="px-6 py-3">Vai trò</th>
-              <th className="px-6 py-3">Trạng thái</th>
-              <th className="px-6 py-3">Ngày tạo</th>
-              <th className="px-6 py-3">Hành động</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Vai trò
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase ">
+                Trạng thái
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Ngày tạo
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Hành động
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {paginatedUsers.map((user) => (
               <tr key={user.id} className="text-center align-middle">
-                <td className="px-6 py-4 font-medium text-gray-900 text-left">
+                <td className="px-6 py-3 font-medium text-gray-900 text-left">
                   {user.firstName} {user.lastName}
                 </td>
-                <td className="px-6 py-4 font-semibold">
+                <td className="px-6 py-3 whitespace-nowrap text-left">
                   <span
                     className={
                       user.roles === "ADMIN"
-                        ? "text-purple-600 bg-purple-50 px-2 py-1 rounded-full"
-                        : "text-blue-600 bg-blue-50 px-2 py-1 rounded-full"
+                        ? "inline-flex px-2 py-1 text-sm font-semibold rounded-full text-purple-600 bg-purple-50"
+                        : "inline-flex px-2 py-1 text-sm font-semibold rounded-full text-blue-600 bg-blue-50"
                     }
                   >
                     {user.roles}
                   </span>
                 </td>
-                <td className="px-6 py-4 font-semibold">
+                <td className="px-6 py-3 whitespace-nowrap text-left">
                   <span
                     className={
                       user.enabled
-                        ? "text-green-600 bg-green-50 px-2 py-1 rounded-full"
-                        : "text-gray-600 bg-gray-100 px-2 py-1 rounded-full"
+                        ? "inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800 text-left"
+                        : "inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800 text-left"
                     }
                   >
                     {user.enabled ? "Hoạt động" : "Bị khoá"}
                   </span>
                 </td>
-                <td className="px-6 py-4 font-semibold">
+                <td className="px-6 py-3 whitespace-nowrap text-left">
                   <span className="text-gray-700 bg-gray-50 px-2 py-1 rounded-full">
                     {formatDate(user.createdAt)}
                   </span>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-center gap-2">
+                <td className="px-6 py-3">
+                  <div className="flex space-x-2">
                     <button
-                      className="p-2 rounded-full hover:bg-blue-100 transition"
+                      className="text-blue-600 hover:text-blue-900 cursor-pointer"
                       onClick={() => setSelectedUser(user)}
                       title="Xem chi tiết"
                     >
-                      <Eye className="w-5 h-5 text-blue-600" />
+                      <Eye className="w-4 h-4 text-blue-600" />
                     </button>
                     <button
-                      className="p-2 rounded-full hover:bg-green-100 transition"
+                      className="text-green-600 hover:text-green-900 cursor-pointer"
                       onClick={() => setEditingUser(user)}
                       title="Sửa"
                     >
-                      <Pencil className="w-5 h-5 text-green-600" />
+                      <Pencil className="w-4 h-4 text-green-600" />
                     </button>
                     <button
-                      className="p-2 rounded-full hover:bg-yellow-100 transition"
+                      className="text-yellow-600 hover:text-yellow-900 cursor-pointer"
                       onClick={() => setUserToBan(user)}
                       title={user.enabled ? "Khóa" : "Mở khóa"}
                     >
                       {user.enabled ? (
-                        <Ban className="w-5 h-5 text-yellow-600" />
+                        <Ban className="w-4 h-4 text-yellow-600" />
                       ) : (
-                        <CheckCircle className="w-5 h-5 text-yellow-600" />
+                        <CheckCircle className="w-4 h-4 text-yellow-600" />
                       )}
                     </button>
                     <button
-                      className="p-2 rounded-full hover:bg-red-100 transition"
+                      className="text-red-600 hover:text-red-900 cursor-pointer"
                       onClick={() => setUserToDelete(user)}
                       title="Xóa"
                     >
-                      <Trash2 className="w-5 h-5 text-red-600" />
+                      <Trash2 className="w-4 h-4 text-red-600" />
                     </button>
                   </div>
                 </td>

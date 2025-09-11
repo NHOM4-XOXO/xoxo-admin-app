@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import PostManagement from "./pages/PostManagement";
 import ReportManagement from "./pages/ReportManagement";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import GroupManagement from "./pages/GroupManagement";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -78,6 +79,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <ReportManagement />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/groups"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <GroupManagement />
             </Layout>
           </ProtectedRoute>
         }

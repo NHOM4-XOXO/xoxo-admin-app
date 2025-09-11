@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { ReportItemResponse } from "../types/Report.type";
+import type { GroupItemResponse, GroupStatus } from "../types/Group.type";
 import { refreshAccessToken } from "./refreshTokenHelper";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_URL + "/api/admin/reports",
+  baseUrl: import.meta.env.VITE_API_URL + "/api/admin/groups",
   prepareHeaders: (headers) => {
     const authData = localStorage.getItem("adminAuth");
     if (authData) {
@@ -28,57 +28,54 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   return result;
 };
 
-export const reportApi = createApi({
-  reducerPath: "report",
+export const groupApi = createApi({
+  reducerPath: "group",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["Report"],
-  keepUnusedDataFor: 60, // Keep data for 60 seconds
-  refetchOnMountOrArgChange: false, // Don't refetch on mount
-  refetchOnFocus: false, // Don't refetch on window focus
-  refetchOnReconnect: false, // Don't refetch on reconnect
+  tagTypes: ["Group"],
   endpoints: (builder) => ({
-    getReports: builder.query<ReportItemResponse[], void>({
+    getGroups: builder.query<GroupItemResponse[], void>({
       query: () => "",
       transformResponse: (response: {
         statusCode: string;
         message: string;
-        data: ReportItemResponse[];
+        data: GroupItemResponse[];
       }) => response.data,
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: "Report" as const, id })),
-              { type: "Report", id: "LIST" },
+              ...result.map(({ id }) => ({ type: "Group" as const, id })),
+              { type: "Group", id: "LIST" },
             ]
-          : [{ type: "Report", id: "LIST" }],
+          : [{ type: "Group", id: "LIST" }],
     }),
-
-    
-    deleteReport: builder.mutation<void, number>({
+    deleteGroup: builder.mutation<void, number>({
       query: (id) => ({
         url: `/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: [{ type: "Report", id: "LIST" }],
+      invalidatesTags: ["Group"],
     }),
 
-    updateReport: builder.mutation<
-      ReportItemResponse,
-      Partial<ReportItemResponse> & Pick<ReportItemResponse, "id">
+    updateGroupStatus: builder.mutation<
+      GroupItemResponse,
+      { groupId: number; status: GroupStatus }
     >({
-      query: ({ id, ...patch }) => ({
-        url: `/${id}/review`,
+      query: ({ groupId, status }) => ({
+        url: `/${groupId}/status`,
         method: "PATCH",
-        body: patch,
+        body: { status },
       }),
-      invalidatesTags: (_, __, { id }) => [{ type: "Report", id }],
+      invalidatesTags: (_, __, { groupId }) => [{ type: "Group", id: groupId }],
+    }),
+    getGroupAnalytics: builder.query<any, number>({
+      query: (groupId) => `/${groupId}/analytics`,
     }),
   }),
 });
 
-// Export hooks for usage in functional components
 export const {
-  useGetReportsQuery,
-  useUpdateReportMutation,
-  useDeleteReportMutation,
-} = reportApi;
+  useGetGroupsQuery,
+  useDeleteGroupMutation,
+  useUpdateGroupStatusMutation,
+  useGetGroupAnalyticsQuery,
+} = groupApi;

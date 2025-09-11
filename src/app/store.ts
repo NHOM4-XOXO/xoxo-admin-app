@@ -5,6 +5,7 @@ import { postAPI } from "../api/postAPI";
 import { userAPI } from "../api/userApi";
 import { reportApi } from "../api/reportApi";
 import { locationAPI } from "../api/locationApi";
+import { groupApi } from "../api/groupApi";
 
 export const store = configureStore({
   reducer: {
@@ -13,7 +14,8 @@ export const store = configureStore({
     [postAPI.reducerPath]: postAPI.reducer,
     [userAPI.reducerPath]: userAPI.reducer,
     [reportApi.reducerPath]: reportApi.reducer,
-    [locationAPI.reducerPath]:locationAPI.reducer,
+    [locationAPI.reducerPath]: locationAPI.reducer,
+    [groupApi.reducerPath]: groupApi.reducer,
   },
   // Adding the api middleware enables caching, invalidation, polling,
   // and other useful features of `rtk-query`.
@@ -23,7 +25,8 @@ export const store = configureStore({
       .concat(postAPI.middleware)
       .concat(userAPI.middleware)
       .concat(reportApi.middleware)
-      .concat(locationAPI.middleware),
+      .concat(locationAPI.middleware)
+      .concat(groupApi.middleware),
 });
 
 // optional, but required for refetchOnFocus/refetchOnReconnect behaviors
