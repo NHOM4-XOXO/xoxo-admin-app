@@ -25,6 +25,7 @@ import "../index.css";
 import FilterDropdown from "../components/FilterDropdown";
 import ConfirmModal from "../components/modals/ConfirmModal";
 
+
 const optionListStatus = [
   { value: "all", label: "Tất cả trạng  thái" },
   { value: "ACTIVE", label: "Đã đăng" },
@@ -94,6 +95,8 @@ export default function PostManagement() {
   const [confirmModal, setConfirmModal] = useState<{
     message: string;
     onConfirm: () => Promise<void> | void;
+    colorClass?: string;
+    titleClass?: string;
   } | null>(null);
 
   const getStatusBadge = (status: string) => {
@@ -362,11 +365,14 @@ export default function PostManagement() {
                                   await handleStatusChange(post.id, "ACTIVE");
                                   setConfirmModal(null);
                                 },
+                                colorClass:
+                                  getStatusBgColor("ACTIVE").colorClass,
+                                titleClass:
+                                  getStatusBgColor("ACTIVE").titleClass,
                               })
                             }
                             disabled={isUpdating}
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
-                            title="Ẩn bài viết"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -391,11 +397,14 @@ export default function PostManagement() {
                                   await handleStatusChange(post.id, "HIDDEN");
                                   setConfirmModal(null);
                                 },
+                                colorClass:
+                                  getStatusBgColor("HIDDEN").colorClass,
+                                titleClass:
+                                  getStatusBgColor("HIDDEN").titleClass,
                               })
                             }
                             disabled={isUpdating}
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
-                            title="Ẩn bài viết"
                           >
                             <Flag className="w-4 h-4" />
                           </button>
@@ -528,8 +537,30 @@ export default function PostManagement() {
           message={confirmModal.message}
           onCancel={() => setConfirmModal(null)}
           onConfirm={confirmModal.onConfirm}
+          colorClass={confirmModal.colorClass}
+          titleClass={confirmModal.titleClass}
         />
       )}
     </div>
   );
+}
+
+function getStatusBgColor(status: string) {
+  switch (status) {
+    case "ACTIVE":
+      return {
+        colorClass: "bg-green-600 hover:bg-green-700",
+        titleClass: "text-green-600",
+      };
+      case "HIDDEN":
+      return {
+        colorClass: "bg-yellow-600 hover:bg-yellow-700",
+        titleClass: "text-yellow-600",
+      };
+    default:
+      return {
+        colorClass: "bg-blue-600 hover:bg-blue-700",
+        titleClass: "text-blue-600",
+      };
+  }
 }

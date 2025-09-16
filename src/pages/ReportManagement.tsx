@@ -750,6 +750,7 @@ function getStatusColorClass(status: string) {
       return "text-blue-600";
   }
 }
+
 function getStatusBgClass(status: string) {
   switch (status) {
     case "IN_PROGRESS":

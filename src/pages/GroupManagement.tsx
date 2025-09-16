@@ -335,9 +335,11 @@ export default function GroupManagement() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getPrivacyBadge(group.privacy)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex items-center gap-1">
-                    <Users className="w-4 h-4 mr-1 text-gray-400" />
-                    {group.memberCount}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-1 text-gray-400" />
+                      {group.memberCount}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {group.postCount}
