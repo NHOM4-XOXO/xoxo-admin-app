@@ -329,17 +329,19 @@ export default function GroupManagement() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap align-middle">
                     {getStatusBadge(group.status)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap ">
                     {getPrivacyBadge(group.privacy)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex items-center gap-1">
-                    <Users className="w-4 h-4 mr-1 text-gray-400" />
-                    {group.memberCount}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-middle">
+                    <div className="inline-flex items-center gap-1 leading-none">
+                      <Users className="w-4 h-4 text-gray-400" />
+                      <span>{group.memberCount}</span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-middle">
                     {group.postCount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

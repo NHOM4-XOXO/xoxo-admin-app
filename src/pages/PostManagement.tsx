@@ -33,8 +33,6 @@ const optionListStatus = [
 ];
 
 export default function PostManagement() {
-  // Redux hooks for data fetching and mutations
-  // Nếu response là { statusCode, message, data } thì lấy posts = data?.data || []
   const { data: postsResponse, isLoading, error } = useGetPostsQuery();
   const posts: PostItemResponse[] = Array.isArray(postsResponse)
     ? (postsResponse as PostItemResponse[])
@@ -51,7 +49,7 @@ export default function PostManagement() {
     null
   );
   const [showPostModal, setShowPostModal] = useState(false);
-  
+
   const [filteredPosts, setFilteredPosts] = useState<PostItemResponse[]>([]);
 
   //Pagination state
@@ -69,12 +67,10 @@ export default function PostManagement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, searchTerm]);
 
-  // Filter posts based on search and filter criteria
   useEffect(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredPosts(
       posts.filter((post: PostItemResponse) => {
-        // Tìm kiếm theo tên tác giả hoặc nội dung
         const authorName = `${post.authorFirstName || ""} ${
           post.authorLastName || ""
         }`.trim();
@@ -252,7 +248,7 @@ export default function PostManagement() {
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Bài viết
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Trạng thái
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
@@ -261,7 +257,7 @@ export default function PostManagement() {
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Tương tác
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Thao tác
                 </th>
               </tr>
@@ -288,7 +284,6 @@ export default function PostManagement() {
                         <div className="text-sm text-gray-600 line-clamp-2 mt-1">
                           {post.content}
                         </div>
-                        {/* Nếu có hashtags */}
                         {post.hashtags && (
                           <div className="mt-1 text-xs text-blue-600">
                             #{post.hashtags}
@@ -368,7 +363,7 @@ export default function PostManagement() {
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
                             title="Ẩn bài viết"
                           >
-                            <Eye className="w-4 h-4" />
+                            <EyeOff className="w-4 h-4 text-red-900" />
                           </button>
                         </Tippy>
                       )}
@@ -397,7 +392,8 @@ export default function PostManagement() {
                             className="text-yellow-600 hover:text-yellow-900 disabled:opacity-50 cursor-pointer"
                             title="Ẩn bài viết"
                           >
-                            <Flag className="w-4 h-4" />
+                            {/* <Flag className="w-4 h-4" /> NOTE */}
+                            <Eye className="w-4 h-4" />
                           </button>
                         </Tippy>
                       )}
