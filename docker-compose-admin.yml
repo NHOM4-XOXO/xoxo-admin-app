@@ -5,3 +5,5 @@ services:
     restart: always
     ports:
       - "81:3000"
+    environment:
+      - VITE_API_URL=https://xoxo.id.vn
