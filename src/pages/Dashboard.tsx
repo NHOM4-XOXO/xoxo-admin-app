@@ -162,7 +162,7 @@ const Dashboard = () => {
     ],
   };
 
-  // Sử dụng dữ liệu thực nếu có, không thì dùng mock data
+  // Sử dụng dữ liệu thực or dùng mock data
   const displayStats = stats || mockStats;
   const displayActivities = recentActivities || mockActivities;
   const displayTopPosts = topPosts || mockTopPosts;
