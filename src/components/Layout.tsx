@@ -10,8 +10,6 @@ import {
   X,
   LogOut,
   User,
-  Bell,
-  Settings,
   GroupIcon,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
