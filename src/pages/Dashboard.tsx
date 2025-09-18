@@ -28,6 +28,12 @@ import {
   useGetStatsQuery,
   useGetTopPostsQuery,
 } from "../api/dashboardApi";
+import type {
+  Stats,
+  Activity,
+  TopPost,
+  ChartData,
+} from "../types/Dashboard.type";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -36,6 +42,131 @@ const Dashboard = () => {
   const { data: recentActivities } = useGetActivitiesQuery();
   const { data: topPosts } = useGetTopPostsQuery();
   const { data: chartData } = useGetChartDataQuery();
+
+  // Mock data để test giao diện
+  const mockStats: Stats = {
+    id: 1,
+    totalUsers: 12345,
+    newUsersToday: 23,
+    totalPosts: 8932,
+    newPostsToday: 45,
+    pendingReports: 12,
+    onlineUsers: 456,
+    engagementRate: 78.5,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const mockActivities: Activity[] = [
+    {
+      id: 1,
+      type: "user",
+      message: "Người dùng John Doe đăng ký tài khoản mới",
+      time: "5 phút trước",
+      urgent: false,
+      userId: "user123",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      type: "report",
+      message: "Báo cáo vi phạm mới từ user #123",
+      time: "10 phút trước",
+      urgent: true,
+      userId: "user123",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 3,
+      type: "post",
+      message: "Bài viết #456 đã được duyệt",
+      time: "15 phút trước",
+      urgent: false,
+      postId: "post456",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 4,
+      type: "user",
+      message: "Nhóm 'React Developers' có hoạt động bất thường",
+      time: "30 phút trước",
+      urgent: true,
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 5,
+      type: "report",
+      message: "Admin Jane Smith đã xử lý 5 báo cáo",
+      time: "1 giờ trước",
+      urgent: false,
+      createdAt: new Date().toISOString(),
+    },
+  ];
+
+  const mockTopPosts: TopPost[] = [
+    {
+      id: 1,
+      title: "Hướng dẫn học React cho người mới bắt đầu",
+      likes: 234,
+      comments: 45,
+      shares: 12,
+      authorId: "author1",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      title: "10 mẹo tối ưu hiệu suất JavaScript",
+      likes: 189,
+      comments: 32,
+      shares: 8,
+      authorId: "author2",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 3,
+      title: "Thiết kế UI/UX hiện đại với Tailwind CSS",
+      likes: 156,
+      comments: 28,
+      shares: 15,
+      authorId: "author3",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 4,
+      title: "Best Practices cho Node.js Development",
+      likes: 142,
+      comments: 22,
+      shares: 7,
+      authorId: "author4",
+      createdAt: new Date().toISOString(),
+    },
+  ];
+
+  const mockChartData: ChartData = {
+    userGrowth: [
+      { date: "2024-09-12", users: 15 },
+      { date: "2024-09-13", users: 23 },
+      { date: "2024-09-14", users: 18 },
+      { date: "2024-09-15", users: 31 },
+      { date: "2024-09-16", users: 28 },
+      { date: "2024-09-17", users: 35 },
+      { date: "2024-09-18", users: 23 },
+    ],
+    postActivity: [
+      { date: "2024-09-12", posts: 45 },
+      { date: "2024-09-13", posts: 67 },
+      { date: "2024-09-14", posts: 52 },
+      { date: "2024-09-15", posts: 89 },
+      { date: "2024-09-16", posts: 73 },
+      { date: "2024-09-17", posts: 94 },
+      { date: "2024-09-18", posts: 67 },
+    ],
+  };
+
+  // Sử dụng dữ liệu thực or dùng mock data
+  const displayStats = stats || mockStats;
+  const displayActivities = recentActivities || mockActivities;
+  const displayTopPosts = topPosts || mockTopPosts;
+  const displayChartData = chartData || mockChartData;
 
   const MetricCard = ({
     title,
@@ -105,7 +236,7 @@ const Dashboard = () => {
           <AlertTriangle className="w-5 h-5 text-red-600 mr-3" />
           <div>
             <h3 className="text-sm font-medium text-red-800">
-              Cảnh báo: {stats?.pendingReports || 0} báo cáo cần xử lý
+              Cảnh báo: {displayStats?.pendingReports || 0} báo cáo cần xử lý
             </h3>
             <p className="text-sm text-red-700">
               Có các báo cáo nghiêm trọng cần được xem xét ngay lập tức
@@ -118,30 +249,30 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Tổng người dùng"
-          value={stats?.totalUsers.toLocaleString() || 0}
+          value={displayStats?.totalUsers?.toLocaleString() || 0}
           change={5.2}
           icon={Users}
           color="blue"
         />
         <MetricCard
           title="Người dùng mới hôm nay"
-          value={stats?.newUsersToday || 0}
+          value={displayStats?.newUsersToday || 0}
           change={12.3}
           icon={UserPlus}
           color="green"
         />
         <MetricCard
           title="Tổng bài viết"
-          value={stats?.totalPosts.toLocaleString() || 0}
+          value={displayStats?.totalPosts?.toLocaleString() || 0}
           change={-2.1}
           icon={FileText}
           color="purple"
         />
         <MetricCard
           title="Người dùng online"
-          value={stats?.onlineUsers.toLocaleString() || 0}
+          value={displayStats?.onlineUsers?.toLocaleString() || 0}
           icon={Eye}
-          color="orange"
+          color="gray"
         />
       </div>
 
@@ -156,7 +287,7 @@ const Dashboard = () => {
           </div>
           <div className="p-6">
             <div className="space-y-1">
-              {recentActivities?.map((activity) => (
+              {displayActivities?.map((activity) => (
                 <ActivityItem key={activity.id} activity={activity} />
               ))}
             </div>
@@ -203,7 +334,7 @@ const Dashboard = () => {
                   <div>
                     <p className="font-medium text-gray-900">Xử lý báo cáo</p>
                     <p className="text-sm text-gray-500">
-                      {stats?.pendingReports || 0} báo cáo chờ xử lý
+                      {displayStats?.pendingReports || 0} báo cáo chờ xử lý
                     </p>
                   </div>
                 </div>
@@ -236,7 +367,7 @@ const Dashboard = () => {
             </div>
             <div className="p-6">
               <div className="space-y-4">
-                {topPosts?.map((post) => (
+                {displayTopPosts?.map((post) => (
                   <div
                     key={post.id}
                     className="border-b border-gray-100 pb-4 last:border-b-0"
@@ -274,7 +405,7 @@ const Dashboard = () => {
           <div className="p-6">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData?.userGrowth || []}>
+                <LineChart data={displayChartData?.userGrowth || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis
                     dataKey="date"
@@ -323,7 +454,7 @@ const Dashboard = () => {
           <div className="p-6">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData?.postActivity || []}>
+                <BarChart data={displayChartData?.postActivity || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis
                     dataKey="date"

@@ -149,12 +149,6 @@ const [confirmModal, setConfirmModal] = useState<{
             Theo dõi và chỉnh sửa thông tin người dùng
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Thêm người dùng
-        </button>
       </div>
 
       {/* Thống kê */}
@@ -285,13 +279,6 @@ const [confirmModal, setConfirmModal] = useState<{
                       title="Xem chi tiết"
                     >
                       <Eye className="w-4 h-4 text-blue-600" />
-                    </button>
-                    <button
-                      className="text-green-600 hover:text-green-900 cursor-pointer"
-                      onClick={() => setEditingUser(user)}
-                      title="Sửa"
-                    >
-                      <Pencil className="w-4 h-4 text-green-600" />
                     </button>
                     <button
                       className="text-yellow-600 hover:text-yellow-900 cursor-pointer"
