@@ -5,12 +5,10 @@ import {
   Eye,
   Ban,
   RefreshCw,
-  Plus,
   Users,
   UserCheck,
   UserX,
   ShieldCheck,
-  Pencil,
   CheckCircle,
 } from "lucide-react";
 import AddUserModal from "../components/modals/AddUserModal";
