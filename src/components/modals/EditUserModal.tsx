@@ -19,9 +19,10 @@ type EditUserFormType = {
   bio: string;
 };
 
-interface EditUserModalProps {
+export interface EditUserModalProps {
   user: UserType;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export default function EditUserModal({ user, onClose }: EditUserModalProps) {

@@ -11,7 +11,6 @@ import PostManagement from "./pages/PostManagement";
 import ReportManagement from "./pages/ReportManagement";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import GroupManagement from "./pages/GroupManagement";
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;

@@ -10,6 +10,7 @@ import {
   UserX,
   ShieldCheck,
   CheckCircle,
+  UserPlus,
 } from "lucide-react";
 import AddUserModal from "../components/modals/AddUserModal";
 import ConfirmModal from "../components/modals/ConfirmModal";
@@ -18,13 +19,19 @@ import EditUserModal from "../components/modals/EditUserModal";
 import {
   useGetUsersQuery,
   useUpdateUserMutation,
+  useAssignUserRoleMutation,
+  useRemoveUserRoleMutation,
 } from "../api/userApi";
+
+import { useAuth } from "../contexts/AuthContext";
 import type { UserType } from "../types/User.type";
 import CustomPagination from "../components/CustomPagination";
 import { removeVietnameseTones } from "../components/removeVietnameseTones";
 import SearchComponent from "../components/SearchComponent";
 import FilterDropdown from "../components/FilterDropdown";
 import "../index.css";
+import { set } from "react-hook-form";
+import AddAdminModal from "../components/modals/AddAdminModal";
 
 const optionListRole = [
   { value: "all", label: "Tất cả vai trò" },
@@ -38,9 +45,31 @@ const optionListStatus = [
   { value: "banned", label: "Bị khóa" },
 ];
 
+const formatUserRole = (roles: string) => {
+  if (!roles) return "USER";
+
+  if (roles.includes("ADMIN") && roles.includes("USER")) {
+    return "ADMIN, USER";
+  } else if (roles.includes("ADMIN")) {
+    return "ADMIN";
+  } else {
+    return "USER";
+  }
+};
+
+const getRoleColor = (roles: string) => {
+  if (roles && roles.includes("ADMIN")) {
+    return "inline-flex px-2 py-1 text-sm font-semibold rounded-full text-purple-600 bg-purple-50";
+  } else {
+    return "inline-flex px-2 py-1 text-sm font-semibold rounded-full text-blue-600 bg-blue-50";
+  }
+};
+
 export default function UserManagement() {
   const [updateUser] = useUpdateUserMutation();
-
+  const [assignUserRole] = useAssignUserRoleMutation();
+  const [removeUserRole] = useRemoveUserRoleMutation();
+  const { user: currentUser } = useAuth();
 
   const { data, isLoading, error, refetch } = useGetUsersQuery();
   let users: UserType[] = [];
@@ -53,12 +82,17 @@ export default function UserManagement() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
+  const [assignRoleModal, setAssignRoleModal] = useState<{
+    user: UserType;
+    targetRole: string;
+  } | null>(null);
 
   const filteredUsers = useMemo(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
@@ -75,8 +109,10 @@ export default function UserManagement() {
 
       const matchesRole =
         roleFilter === "all" ||
-        (roleFilter === "admin" && user.roles === "ADMIN") ||
-        (roleFilter === "user" && user.roles === "USER");
+        (roleFilter === "admin" &&
+          user.roles &&
+          user.roles.includes("ADMIN")) ||
+        (roleFilter === "user" && user.roles && user.roles === "USER");
 
       return matchesSearch && matchesStatus && matchesRole;
     });
@@ -110,11 +146,33 @@ export default function UserManagement() {
     }
   };
 
-const [confirmModal, setConfirmModal] = useState<{
-  open: boolean;
-  message: string;
-  onConfirm: () => Promise<void> | void;
-} | null>(null);
+  const handleAssignRole = async (userId: number, role: string) => {
+    try {
+      await assignUserRole({ userId, role }).unwrap();
+      setAssignRoleModal(null);
+      refetch();
+    } catch (err) {
+      console.error("Assign role failed", err);
+      alert("Gán quyền thất bại");
+    }
+  };
+
+  const handleRemoveRole = async (userId: number, role: string) => {
+    try {
+      await removeUserRole({ userId, role }).unwrap();
+      setAssignRoleModal(null);
+      refetch();
+    } catch (err) {
+      console.error("Remove role failed", err);
+      alert("Xóa quyền thất bại");
+    }
+  };
+  
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    message: string;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString("vi-VN");
@@ -144,11 +202,21 @@ const [confirmModal, setConfirmModal] = useState<{
             Quản lý người dùng
           </h1>
           <p className="text-gray-600">
-            Theo dõi và chỉnh sửa thông tin người dùng
+            Theo dõi và quản lý hoạt động của người dùng
           </p>
         </div>
-      </div>
 
+        {/* Button Tạo Admin ở góc phải */}
+        {currentUser?.role === "OWNER" && (
+          <button
+            onClick={() => setShowAddAdminModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" />
+            Tạo Admin
+          </button>
+        )}
+      </div>
       {/* Thống kê */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 ">
         {[
@@ -173,7 +241,8 @@ const [confirmModal, setConfirmModal] = useState<{
           {
             icon: <ShieldCheck className="w-10 h-10 text-purple-600" />,
             label: "Quản trị viên",
-            count: users.filter((u) => u.roles === "ADMIN").length,
+            count: users.filter((u) => u.roles && u.roles.includes("ADMIN"))
+              .length,
             onClick: () => setRoleFilter("admin"),
           },
         ].map((item, index) => (
@@ -243,14 +312,8 @@ const [confirmModal, setConfirmModal] = useState<{
                   {user.firstName} {user.lastName}
                 </td>
                 <td className="px-6 py-3 whitespace-nowrap text-left">
-                  <span
-                    className={
-                      user.roles === "ADMIN"
-                        ? "inline-flex px-2 py-1 text-sm font-semibold rounded-full text-purple-600 bg-purple-50"
-                        : "inline-flex px-2 py-1 text-sm font-semibold rounded-full text-blue-600 bg-blue-50"
-                    }
-                  >
-                    {user.roles}
+                  <span className={getRoleColor(user.roles)}>
+                    {formatUserRole(user.roles)}
                   </span>
                 </td>
                 <td className="px-6 py-3 whitespace-nowrap text-left">
@@ -283,8 +346,11 @@ const [confirmModal, setConfirmModal] = useState<{
                       onClick={() =>
                         setConfirmModal({
                           open: true,
-                          message: `Bạn có chắc chắn muốn ${user.enabled ? "khóa" : "mở khóa"
-                          } người dùng "${user.firstName} ${user.lastName}" không?`,
+                          message: `Bạn có chắc chắn muốn ${
+                            user.enabled ? "khóa" : "mở khóa"
+                          } người dùng "${user.firstName} ${
+                            user.lastName
+                          }" không?`,
                           onConfirm: async () => {
                             await handleBanUser(user.id);
                             setConfirmModal(null);
@@ -299,6 +365,46 @@ const [confirmModal, setConfirmModal] = useState<{
                         <CheckCircle className="w-4 h-4 text-yellow-600" />
                       )}
                     </button>
+                    {currentUser?.role === "OWNER" && (
+                      <>
+                        {user.roles &&
+                          (user.roles === "USER" ||
+                            user.roles.includes("USER")) && (
+                            <>
+                              {/* Nếu chỉ có USER → hiển thị button gán ADMIN */}
+                              {user.roles === "USER" && (
+                                <button
+                                  className="text-purple-600 hover:text-purple-900 cursor-pointer"
+                                  onClick={() =>
+                                    setAssignRoleModal({
+                                      user,
+                                      targetRole: "ADMIN",
+                                    })
+                                  }
+                                  title="Gán quyền Admin"
+                                >
+                                  <UserPlus className="w-4 h-4 text-purple-600" />
+                                </button>
+                              )}
+                              {user.roles.includes("USER") &&
+                                user.roles.includes("ADMIN") && (
+                                  <button
+                                    className="text-gray-600 hover:text-gray-900 cursor-pointer"
+                                    onClick={() =>
+                                      setAssignRoleModal({
+                                        user,
+                                        targetRole: "REMOVE_ADMIN",
+                                      })
+                                    }
+                                    title="Gỡ quyền Admin"
+                                  >
+                                    <UserX className="w-4 h-4 text-gray-600" />
+                                  </button>
+                                )}
+                            </>
+                          )}
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -340,11 +446,52 @@ const [confirmModal, setConfirmModal] = useState<{
         />
       )}
 
+      {assignRoleModal && (
+        <ConfirmModal
+          message={`Bạn có chắc chắn muốn ${
+            assignRoleModal.targetRole === "ADMIN"
+              ? "gán quyền Admin"
+              : "gỡ quyền Admin"
+          } cho người dùng "${assignRoleModal.user.firstName} ${
+            assignRoleModal.user.lastName
+          }" không?`}
+          onCancel={() => setAssignRoleModal(null)}
+          onConfirm={async () => {
+            if (assignRoleModal.targetRole === "ADMIN") {
+              await handleAssignRole(assignRoleModal.user.id, "ADMIN");
+            } else if (assignRoleModal.targetRole === "REMOVE_ADMIN") {
+              await handleRemoveRole(assignRoleModal.user.id, "ADMIN");
+            }
+          }}
+          colorClass={
+            assignRoleModal.targetRole === "ADMIN"
+              ? "bg-purple-600 hover:bg-purple-700"
+              : "bg-orange-600 hover:bg-orange-700"
+          }
+          titleClass={
+            assignRoleModal.targetRole === "ADMIN"
+              ? "text-purple-600"
+              : "text-orange-600"
+          }
+        />
+      )}
+      {showAddAdminModal && (
+        <AddAdminModal
+          onClose={() => setShowAddAdminModal(false)}
+          onSuccess={() => {
+            setShowAddAdminModal(false);
+            refetch();
+          }}
+        />
+      )}
+
       {confirmModal && (
         <ConfirmModal
           message={confirmModal.message}
           onCancel={() => setConfirmModal(null)}
           onConfirm={confirmModal.onConfirm}
+          colorClass="bg-red-600 hover:bg-red-700"
+          titleClass="text-red-600"
         />
       )}
     </div>
