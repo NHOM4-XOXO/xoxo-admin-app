@@ -445,7 +445,7 @@ export default function ReportManagement() {
                 <div className="border-t pt-4">
                   <div className="mb-4">
                     <span className="text-sm font-medium text-gray-500">
-                      Nội dung được báo cáo:
+                      Lý do báo cáo:
                     </span>
                     <div className="mt-1 p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm text-gray-900">
@@ -453,11 +453,26 @@ export default function ReportManagement() {
                       </p>
                     </div>
                     <span className="text-sm font-medium text-gray-500">
+                      Nội dung báo cáo:
+                    </span>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-900">
+                        {selectedReport.additionalInfo &&
+                        selectedReport.additionalInfo.trim() !== "" &&
+                        selectedReport.additionalInfo !== "string"
+                          ? selectedReport.additionalInfo
+                          : "Không có"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-gray-500">
                       Ghi chú:
                     </span>
                     <div className="mt-1 p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm text-gray-900">
-                        {selectedReport.adminNotes}
+                        {selectedReport.adminNotes &&
+                        selectedReport.adminNotes.trim() !== ""
+                          ? selectedReport.adminNotes
+                          : "Không có"}
                       </p>
                     </div>
                   </div>
