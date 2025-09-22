@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 const login = async (
   email: string,
   password: string,
-  rememberMe = false
+  rememberMe: boolean = false
 ): Promise<boolean> => {
   try {
     const res = await fetch(import.meta.env.VITE_API_URL + "/api/auth/login", {
@@ -88,10 +88,18 @@ const login = async (
 
     if (!token || !userEmail) return false;
 
+    // Kiểm tra role có phải admin không
+    const cleanRole = role ? role.replace(/\[|\]/g, "") : "USER";
+    const allowedRoles = ["ADMIN", "OWNER"];
+
+    if (!allowedRoles.includes(cleanRole)) {
+      throw new Error("ROLE_NOT_ALLOWED");
+    }
+
     const userData = {
       name: userEmail.split("@")[0] || "unknown",
       email: userEmail,
-      role: role ? role.replace(/\[|\]/g, "") : "USER",
+      role: cleanRole,
     };
 
     setIsAuthenticated(true);
@@ -113,6 +121,10 @@ const login = async (
     return true;
   } catch (error) {
     console.error("Login error:", error);
+    // Ném lỗi lên để LoginPage có thể bắt và xử lý
+    if (error instanceof Error && error.message === "ROLE_NOT_ALLOWED") {
+      throw error;
+    }
     return false;
   }
 };

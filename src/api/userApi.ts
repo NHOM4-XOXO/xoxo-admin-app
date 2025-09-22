@@ -39,7 +39,6 @@ export const userAPI = createApi({
       providesTags: ["User"],
     }),
 
-
     updateUser: builder.mutation<UserType, { id: number; enabled: boolean }>({
       query: ({ id, enabled }) => ({
         url: `/${id}/status`,
@@ -57,6 +56,33 @@ export const userAPI = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    assignUserRole: builder.mutation<any, { userId: number; role: string }>({
+      query: ({ userId, role }) => ({
+        url: `/../../owner/users/${userId}/roles`,
+        method: "POST",
+        body: { role },
+      }),
+      invalidatesTags: ["User"],
+    }),
+    removeUserRole: builder.mutation<any, { userId: number; role: string }>({
+      query: ({ userId, role }) => ({
+        url: `${import.meta.env.VITE_API_URL}/api/owner/users/${userId}/roles`,
+        method: "DELETE",
+        body: { role },
+      }),
+      invalidatesTags: ["User"],
+    }),
+    createAdmin: builder.mutation<
+      any,
+      { email: string; password: string; firstName: string; lastName: string }
+    >({
+      query: (body) => ({
+        url: `${import.meta.env.VITE_API_URL}/api/owner/users/admin`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -64,4 +90,7 @@ export const {
   useGetUsersQuery,
   useUpdateUserMutation,
   useCreateUserMutation,
+  useAssignUserRoleMutation,
+  useRemoveUserRoleMutation,
+  useCreateAdminMutation,
 } = userAPI;

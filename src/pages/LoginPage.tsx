@@ -39,8 +39,12 @@ export default function LoginPage() {
       if (!success) {
         setError("Email hoặc mật khẩu không đúng");
       }
-    } catch {
-      setError("Đã xảy ra lỗi, vui lòng thử lại");
+    } catch (error: any) {
+      if (error?.message === "ROLE_NOT_ALLOWED") {
+        setError("Bạn không có quyền truy cập vào hệ thống quản trị");
+      } else {
+        setError("Đã xảy ra lỗi, vui lòng thử lại");
+      }
     } finally {
       setLoading(false);
     }
@@ -62,23 +66,6 @@ export default function LoginPage() {
             <p className="mt-2 text-sm text-gray-600">
               Đăng nhập vào bảng điều khiển quản trị
             </p>
-          </div>
-
-          {/* Demo Info */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
-            <div className="flex items-start space-x-3">
-              <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h4 className="text-sm font-medium text-blue-900">
-                  Tài khoản demo
-                </h4>
-                <p className="text-xs text-blue-700 mt-1">
-                  <strong>Email:</strong> admin@example.com
-                  <br />
-                  <strong>Mật khẩu:</strong> 123
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Form */}

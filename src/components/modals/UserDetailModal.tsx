@@ -37,7 +37,6 @@ const getGenderLabel = (gender?: string) => {
 export default function UserDetailModal({
   user,
   onClose,
-  onEdit,
 }: UserDetailModalProps) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
@@ -63,14 +62,6 @@ export default function UserDetailModal({
             <p className="text-sm text-gray-500">{user.email}</p>
             <p className="text-xs text-gray-400">@{user.username}</p>
           </div>
-          {onEdit && (
-            <button
-              onClick={() => onEdit(user)}
-              className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm border px-3 py-1 rounded-md cursor-pointer"
-            >
-              <Pencil className="w-4 h-4" /> Sửa
-            </button>
-          )}
         </div>
 
         {/* Nội dung */}

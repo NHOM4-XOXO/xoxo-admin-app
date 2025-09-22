@@ -582,7 +582,7 @@ export default function ReportManagement() {
                   )}
 
                   {selectedReport.status === "ESCALATED" &&
-                    (role === "LEADER" || role === "ADMIN_SUPER") && (
+                    (role === "OWNER") && (
                       <div className="flex justify-end space-x-3">
                         <button
                           onClick={() =>
