@@ -12,6 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import ForgotPasswordModal from "../components/modals/ForgotPasswordModal";
+import { useLocation } from "react-router-dom";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -23,6 +24,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const { login } = useAuth();
+  const location = useLocation();
+  const successMessage = location.state?.message;
 
   const isValidEmail = (email: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,22 +34,64 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    // Clear previous errors
     setError("");
+    setErrorEmail("");
+
+    // Validation
+    if (!email.trim()) {
+      setErrorEmail("Email không được để trống");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setErrorEmail("Email không hợp lệ");
+      return;
+    }
+
+    if (!password) {
+      setError("Mật khẩu không được để trống");
+      return;
+    }
 
     try {
-      const success = await login(email, password, rememberMe);
-      if (!success) {
-        setError("Email hoặc mật khẩu không đúng");
+      setLoading(true);
+
+      const result = await login(email, password, rememberMe);
+
+      // Handle both old boolean return and new object return
+      if (typeof result === "boolean") {
+        // Old format: login returns boolean
+        if (result) {
+          // Keep loading for navigation
+        } else {
+          setLoading(false); // Stop loading on error
+          setError("Email hoặc mật khẩu không chính xác!");
+        }
+      } else if (typeof result === "object") {
+        // New format: login returns { success, error }
+        if (result.success) {
+          // Keep loading for navigation
+        } else {
+          setLoading(false); // Stop loading on error
+          setError(result.error || "Đăng nhập thất bại!");
+        }
+      } else {
+        setLoading(false); // Stop loading on error
+        setError("Đăng nhập thất bại!");
       }
     } catch (error: any) {
-      if (error?.message === "ROLE_NOT_ALLOWED") {
-        setError("Bạn không có quyền truy cập vào hệ thống quản trị");
+      setLoading(false); // Stop loading on error
+
+      // Handle different error types
+      if (error?.message) {
+        setError(error.message);
+      } else if (typeof error === "string") {
+        setError(error);
       } else {
-        setError("Đã xảy ra lỗi, vui lòng thử lại");
+        setError("Đã xảy ra lỗi không mong muốn!");
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -67,7 +112,12 @@ export default function LoginPage() {
               Đăng nhập vào bảng điều khiển quản trị
             </p>
           </div>
-
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6 flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-green-600 text-sm">{successMessage}</span>
+            </div>
+          )}
           {/* Form */}
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-5">

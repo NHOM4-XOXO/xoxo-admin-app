@@ -1,7 +1,7 @@
 import React from "react";
-
 import { useState } from "react";
 import { X, Mail, Loader2, CheckCircle } from "lucide-react";
+import { useForgotPasswordMutation } from "../../api/userApi";
 
 interface ForgotPasswordModalProps {
   onClose: () => void;
@@ -10,28 +10,45 @@ interface ForgotPasswordModalProps {
 export default function ForgotPasswordModal({
   onClose,
 }: ForgotPasswordModalProps) {
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setMessage("");
     setIsSuccess(false);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (!email.trim()) {
+      setMessage("Vui lòng nhập email");
+      return;
+    }
 
-    if (email === "admin@example.com") {
-      setMessage("Liên kết đặt lại mật khẩu đã được gửi đến email của bạn.");
-      setIsSuccess(true);
-    } else {
-      setMessage("Email không tồn tại trong hệ thống.");
+    try {
+      const response = await forgotPassword({ email }).unwrap();
+
+      if (response.statusCode === "200" && response.data) {
+        setMessage(response.data); // "Email reset password đã được gửi"
+        setIsSuccess(true);
+
+        // Tự động đóng sau 3 giây
+        setTimeout(() => {
+          onClose();
+        }, 3000);
+      }
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+
+      if (error?.data?.message) {
+        setMessage(error.data.message);
+      } else if (error?.status === 404) {
+        setMessage("Email không tồn tại trong hệ thống");
+      } else {
+        setMessage("Có lỗi xảy ra, vui lòng thử lại");
+      }
       setIsSuccess(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -44,9 +61,11 @@ export default function ForgotPasswordModal({
         >
           <X />
         </button>
+
         <h2 className="text-xl font-semibold mb-4 text-gray-900">
           Quên mật khẩu
         </h2>
+
         <p className="text-sm text-gray-600 mb-6">
           Vui lòng nhập địa chỉ email của bạn. Chúng tôi sẽ gửi cho bạn một liên
           kết để đặt lại mật khẩu.
@@ -54,25 +73,19 @@ export default function ForgotPasswordModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Địa chỉ email
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
-                id="email"
-                name="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Nhập email của bạn"
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -98,18 +111,18 @@ export default function ForgotPasswordModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
+              disabled={isLoading}
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50"
             >
               Hủy
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading || !email.trim()}
               className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
             >
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Gửi liên kết
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {isLoading ? "Đang gửi..." : "Gửi liên kết"}
             </button>
           </div>
         </form>

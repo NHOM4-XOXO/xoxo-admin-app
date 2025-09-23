@@ -6,7 +6,6 @@ import {
   CheckCircle,
   Ban,
   Clock,
-  Pencil,
   X,
 } from "lucide-react";
 import type { UserType } from "../../types/User.type";

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -11,6 +10,9 @@ import {
   LogOut,
   User,
   GroupIcon,
+  Settings,
+  Key,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -24,7 +26,9 @@ const navigation = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   return (
@@ -73,36 +77,84 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div className="flex w-full justify-between">
+            {/* Bên trái: Logo hoặc breadcrumb (có thể thêm sau) */}
+            <div className="hidden lg:block">
+              {/* Có thể thêm breadcrumb hoặc page title */}
+            </div>
+
+            {/* Bên phải: User info + Settings */}
+            <div className="flex items-center space-x-4">
+              {/* User info */}
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <User className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="hidden sm:block">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user?.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {user?.role === "admin" ? "Administrator" : ""}
-                    </p>
-                  </div>
+                <div className="hidden sm:block text-right">
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user?.role === "OWNER"
+                      ? "Chủ sở hữu"
+                      : user?.role === "ADMIN"
+                      ? "Quản trị viên"
+                      : ""}
+                  </p>
                 </div>
-                <button
-                  onClick={logout}
-                  className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md cursor-pointer"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
+                <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User className="h-5 w-5 text-white" />
+                </div>
               </div>
-              {/* <div className="flex space-x-3">
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
-                  <Bell className="w-4 h-4" />
+
+              {/* Settings dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setSettingsOpen(!settingsOpen)}
+                  className="flex items-center space-x-1 p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md cursor-pointer transition-colors"
+                >
+                  <Settings className="h-5 w-5" />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      settingsOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
-                <button className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
-                  <Settings className="w-4 h-4" />
-                </button>
-              </div> */}
+
+                {/* Dropdown menu - giữ nguyên */}
+                {settingsOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setSettingsOpen(false)}
+                    />
+
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-20">
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            setSettingsOpen(false);
+                            navigate("/change-password");
+                          }}
+                          className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <Key className="h-4 w-4" />
+                          <span>Đổi mật khẩu</span>
+                        </button>
+
+                        <hr className="border-gray-200" />
+
+                        <button
+                          onClick={() => {
+                            setSettingsOpen(false);
+                            logout();
+                          }}
+                          className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Đăng xuất</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </header>
