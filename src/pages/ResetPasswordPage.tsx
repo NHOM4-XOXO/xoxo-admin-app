@@ -1,233 +1,245 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { Lock, Eye, EyeOff, Loader2, CheckCircle, XCircle } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-
-// Schema for password validation
-const passwordSchema = yup.object().shape({
-  newPassword: yup
-    .string()
-    .required("Mật khẩu mới là bắt buộc")
-    .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
-    .matches(/[a-z]/, "Mật khẩu phải chứa ít nhất một chữ cái thường")
-    .matches(/[A-Z]/, "Mật khẩu phải chứa ít nhất một chữ cái hoa")
-    .matches(
-      /[!@#$%^&*(),.?":{}|<>]/,
-      "Mật khẩu phải chứa ít nhất một ký tự đặc biệt"
-    ),
-  confirmPassword: yup
-    .string()
-    .required("Xác nhận mật khẩu là bắt buộc")
-    .oneOf([yup.ref("newPassword")], "Mật khẩu xác nhận không khớp"),
-});
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from "lucide-react";
+import { useResetPasswordMutation } from "../api/userApi";
 
 export default function ResetPasswordPage() {
+  const [resetPassword, { isLoading }] = useResetPasswordMutation();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const { resetPassword } = useAuth();
 
-  const [token, setToken] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    resolver: yupResolver(passwordSchema),
+  const [formData, setFormData] = useState({
+    password: "",
+    confirmPassword: "",
   });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const tokenFromUrl = searchParams.get("token");
-    const emailFromUrl = searchParams.get("email");
-    if (tokenFromUrl && emailFromUrl) {
-      setToken(tokenFromUrl);
-      setEmail(emailFromUrl);
+    const urlToken = searchParams.get("token");
+    const stateToken = location.state?.token;
+
+    const resetToken = urlToken || stateToken;
+
+    if (!resetToken) {
+      navigate("/login");
     } else {
-      setMessage("Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
-      setIsSuccess(false);
+      setToken(resetToken);
     }
-  }, [searchParams]);
+  }, [searchParams, location.state, navigate]);
 
-  const onSubmit = async (data: yup.InferType<typeof passwordSchema>) => {
-    if (!token || !email) {
-      setMessage("Liên kết đặt lại mật khẩu không hợp lệ.");
-      setIsSuccess(false);
-      return;
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.password) {
+      newErrors.password = "Mật khẩu không được để trống";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
+    } else if (
+      !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(
+        formData.password
+      )
+    ) {
+      newErrors.password =
+        "Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt";
     }
 
-    setLoading(true);
-    setMessage("");
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Mật khẩu không khớp";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm() || !token) return;
 
     try {
-      const success = await resetPassword(email, token, data.newPassword);
+      // Sửa đổi từ 'password' thành 'newPassword'
+      await resetPassword({
+        token,
+        newPassword: formData.password,
+      }).unwrap();
 
-      if (success) {
-        setMessage("Mật khẩu của bạn đã được đặt lại thành công!");
-        setIsSuccess(true);
-        setTimeout(() => {
-          navigate("/login");
-        }, 3000);
+      setIsSuccess(true);
+
+      setTimeout(() => {
+        navigate("/login", {
+          state: { message: "Đổi mật khẩu thành công! Vui lòng đăng nhập." },
+        });
+      }, 3000);
+    } catch (error: any) {
+      console.error("Reset password error:", error); // Debug
+
+      if (error?.data?.message) {
+        const message = error.data.message.toLowerCase();
+        if (message.includes("token expired") || message.includes("hết hạn")) {
+          setErrors({ submit: "Link đặt lại mật khẩu đã hết hạn" });
+        } else if (
+          message.includes("invalid token") ||
+          message.includes("không hợp lệ")
+        ) {
+          setErrors({ submit: "Link đặt lại mật khẩu không hợp lệ" });
+        } else {
+          setErrors({ submit: error.data.message });
+        }
       } else {
-        setMessage(
-          "Không thể đặt lại mật khẩu. Vui lòng thử lại hoặc yêu cầu liên kết mới."
-        );
-        setIsSuccess(false);
+        setErrors({ submit: "Có lỗi xảy ra, vui lòng thử lại" });
       }
-    } catch (error) {
-      console.error("Error resetting password:", error);
-      setMessage("Đã xảy ra lỗi, vui lòng thử lại.");
-      setIsSuccess(false);
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (!token || !email) {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center space-y-6">
-          <XCircle className="mx-auto h-16 w-16 text-red-500" />
-          <h2 className="text-2xl font-bold text-gray-900">Lỗi</h2>
-          <p className="text-gray-600">
-            {message ||
-              "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn."}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
+          <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Đổi mật khẩu thành công!
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Mật khẩu của bạn đã được cập nhật. Bạn sẽ được chuyển về trang đăng
+            nhập.
           </p>
-          <Link
-            to="/login"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            Quay lại trang đăng nhập
-          </Link>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-sm text-green-700">
+              Đang chuyển hướng... (3 giây)
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center space-y-6">
-        <Lock className="mx-auto h-16 w-16 text-blue-500" />
-        <h2 className="text-2xl font-bold text-gray-900">Đặt lại mật khẩu</h2>
-        <p className="text-gray-600">Vui lòng nhập mật khẩu mới của bạn.</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="mx-auto h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <Lock className="h-6 w-6 text-blue-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Đặt lại mật khẩu
+          </h1>
+          <p className="text-gray-600">
+            Nhập mật khẩu mới cho tài khoản của bạn
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
-          {/* New Password Field */}
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label
-              htmlFor="newPassword"
-              className="block text-sm font-medium text-gray-700 mb-2 text-left"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Mật khẩu mới
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
               <input
-                id="newPassword"
-                type={showNewPassword ? "text" : "password"}
-                {...register("newPassword")}
-                className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => handleInputChange("password", e.target.value)}
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12 ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder="Nhập mật khẩu mới"
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 px-3 flex items-center hover:bg-gray-50 rounded-r-xl transition-colors"
-                onClick={() => setShowNewPassword(!showNewPassword)}
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showNewPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400" />
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
                 ) : (
-                  <Eye className="h-5 w-5 text-gray-400" />
+                  <Eye className="w-5 h-5" />
                 )}
               </button>
             </div>
-            {errors.newPassword && (
-              <p className="mt-2 text-sm text-red-600 text-left">
-                {errors.newPassword.message}
-              </p>
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
             )}
           </div>
 
-          {/* Confirm Password Field */}
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-2 text-left"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Xác nhận mật khẩu
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
               <input
-                id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
-                {...register("confirmPassword")}
-                className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                placeholder="Xác nhận mật khẩu mới"
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  handleInputChange("confirmPassword", e.target.value)
+                }
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12 ${
+                  errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="Nhập lại mật khẩu mới"
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 px-3 flex items-center hover:bg-gray-50 rounded-r-xl transition-colors"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 {showConfirmPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400" />
+                  <EyeOff className="w-5 h-5" />
                 ) : (
-                  <Eye className="h-5 w-5 text-gray-400" />
+                  <Eye className="w-5 h-5" />
                 )}
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className="mt-2 text-sm text-red-600 text-left">
-                {errors.confirmPassword.message}
+              <p className="text-red-500 text-sm mt-1">
+                {errors.confirmPassword}
               </p>
             )}
           </div>
 
-          {message && (
-            <div
-              className={`px-4 py-3 rounded-xl text-sm flex items-center space-x-2 ${
-                isSuccess
-                  ? "bg-green-50 border border-green-200 text-green-600"
-                  : "bg-red-50 border border-red-200 text-red-600"
-              }`}
-            >
-              {isSuccess ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <XCircle className="h-4 w-4" />
-              )}
-              <span>{message}</span>
+          {errors.submit && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <span className="text-red-600 text-sm">{errors.submit}</span>
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading}
-            className="group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            disabled={isLoading || !token}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
           >
-            {loading ? (
-              <div className="flex items-center space-x-2">
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                <span>Đang đặt lại...</span>
-              </div>
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Đang xử lý...
+              </>
             ) : (
-              <span>Đặt lại mật khẩu</span>
+              "Đặt lại mật khẩu"
             )}
           </button>
         </form>
+
+        <div className="text-center mt-6">
+          <button
+            onClick={() => navigate("/login")}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            Quay lại đăng nhập
+          </button>
+        </div>
       </div>
     </div>
   );

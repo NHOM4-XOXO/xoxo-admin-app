@@ -83,6 +83,33 @@ export const userAPI = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    forgotPassword: builder.mutation<any, { email: string }>({
+      query: (body) => ({
+        url: `${import.meta.env.VITE_API_URL}/api/auth/forgot-password`,
+        method: "POST",
+        body,
+      }),
+    }),
+    resetPassword: builder.mutation<
+      any,
+      { token: string; newPassword: string }
+    >({
+      query: (body) => ({
+        url: `${import.meta.env.VITE_API_URL}/api/auth/reset-password`,
+        method: "POST",
+        body,
+      }),
+    }),
+    changePassword: builder.mutation<
+      any,
+      { oldPassword: string; newPassword: string }
+    >({
+      query: (body) => ({
+        url: `${import.meta.env.VITE_API_URL}/api/auth/change-password`,
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -93,4 +120,7 @@ export const {
   useAssignUserRoleMutation,
   useRemoveUserRoleMutation,
   useCreateAdminMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useChangePasswordMutation,
 } = userAPI;

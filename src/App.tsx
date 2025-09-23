@@ -11,28 +11,14 @@ import PostManagement from "./pages/PostManagement";
 import ReportManagement from "./pages/ReportManagement";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import GroupManagement from "./pages/GroupManagement";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
-function LoadingScreen() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Đang tải...</p>
-      </div>
-    </div>
-  );
-}
-
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
@@ -89,6 +75,14 @@ function AppRoutes() {
             <Layout>
               <GroupManagement />
             </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/change-password"
+        element={
+          <ProtectedRoute>
+            <ChangePasswordPage />
           </ProtectedRoute>
         }
       />

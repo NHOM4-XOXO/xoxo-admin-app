@@ -8,14 +8,18 @@ import {
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: { name: string; email: string; role: string } | null;
+  user: {
+    name: string;
+    email: string;
+    role: string;
+    roles: string;
+  } | null;
   login: (
     email: string,
     password: string,
     rememberMe?: boolean
-  ) => Promise<boolean>;
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  loading: boolean;
   resetPassword: (
     email: string,
     token: string,
@@ -24,6 +28,19 @@ interface AuthContextType {
   refreshAccessToken: () => Promise<string | null>;
 }
 
+// Helper function để check role từ string
+const hasRole = (userRoles: string, targetRole: string): boolean => {
+  if (!userRoles) return false;
+  return userRoles.includes(targetRole);
+};
+
+// Helper function để lấy primary role
+const getPrimaryRole = (userRoles: string): string => {
+  if (!userRoles) return "USER";
+  if (hasRole(userRoles, "OWNER")) return "OWNER";
+  if (hasRole(userRoles, "ADMIN")) return "ADMIN";
+  return "USER";
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -33,108 +50,185 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string;
     email: string;
     role: string;
+    roles: string;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuthState = () => {
-      try {
-        const savedAuth = localStorage.getItem("adminAuth");
-        const sessionAuth = sessionStorage.getItem("adminAuth");
+    const checkAuth = () => {
+      const localAuth = localStorage.getItem("adminAuth");
+      const sessionAuth = sessionStorage.getItem("adminAuth");
+      const authData = localAuth || sessionAuth;
 
-        const authData = savedAuth || sessionAuth;
-
-        if (authData) {
+      if (authData) {
+        try {
           const { user: savedUser, token } = JSON.parse(authData);
 
-          if (savedUser && token) {
-            setIsAuthenticated(true);
+          // Kiểm tra user có quyền admin không (từ string roles)
+          const userRoles = savedUser.roles || "";
+
+          // QUAN TRỌNG: Nếu roles từ storage chưa được clean, phải clean
+          const cleanRoles = userRoles.includes("[")
+            ? userRoles.replace(/[\[\]]/g, "")
+            : userRoles;
+
+          const hasAdminAccess =
+            hasRole(cleanRoles, "ADMIN") || hasRole(cleanRoles, "OWNER");
+
+          if (hasAdminAccess && token) {
             setUser(savedUser);
+            setIsAuthenticated(true);
           } else {
             localStorage.removeItem("adminAuth");
             sessionStorage.removeItem("adminAuth");
           }
+        } catch (error) {
+          console.error("Error parsing auth data:", error);
+          localStorage.removeItem("adminAuth");
+          sessionStorage.removeItem("adminAuth");
         }
-      } catch (error) {
-        console.error("Error checking auth state:", error);
-        localStorage.removeItem("adminAuth");
-        sessionStorage.removeItem("adminAuth");
-      } finally {
-        setLoading(false);
       }
     };
 
-    checkAuthState();
+    checkAuth();
   }, []);
 
   // LOGIN
-const login = async (
-  email: string,
-  password: string,
-  rememberMe: boolean = false
-): Promise<boolean> => {
-  try {
-    const res = await fetch(import.meta.env.VITE_API_URL + "/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-      credentials: "include", // để BE set cookie refreshToken
-    });
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe: boolean = false
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+          credentials: "include",
+        }
+      );
 
-    if (!res.ok) return false;
+      if (response.ok) {
+        const result = await response.json();
 
-    const result = await res.json();
-    const { token, email: userEmail, role, tokenType } = result.data || {};
+        // API trả về data trong result.data
+        const data = result.data;
 
-    if (!token || !userEmail) return false;
+        if (!data || !data.token) {
+          return {
+            success: false,
+            error: "Phản hồi từ server không hợp lệ",
+          };
+        }
 
-    // Kiểm tra role có phải admin không
-    const cleanRole = role ? role.replace(/\[|\]/g, "") : "USER";
-    const allowedRoles = ["ADMIN", "OWNER"];
+        const userRoles = data.role || "";
 
-    if (!allowedRoles.includes(cleanRole)) {
-      throw new Error("ROLE_NOT_ALLOWED");
+        // Clean up roles string - bỏ dấu [ ]
+        const cleanRoles = userRoles.replace(/[\[\]]/g, "");
+
+        // Check nếu user có role ADMIN hoặc OWNER
+        const hasAdminAccess =
+          hasRole(cleanRoles, "ADMIN") || hasRole(cleanRoles, "OWNER");
+
+        if (!hasAdminAccess) {
+          return {
+            success: false,
+            error: "Tài khoản của bạn không có quyền truy cập Admin Panel!",
+          };
+        }
+
+        // Xác định primary role (ưu tiên OWNER)
+        const primaryRole = getPrimaryRole(cleanRoles);
+
+        // Tạo name từ email (vì API không trả firstName, lastName)
+        const emailName = data.email.split("@")[0];
+        const displayName =
+          emailName.charAt(0).toUpperCase() + emailName.slice(1);
+
+        // Lưu thông tin user
+        const userData = {
+          name: displayName, // Dùng email làm name
+          email: data.email,
+          role: primaryRole,
+          roles: cleanRoles, // Lưu clean roles
+        };
+
+        // Lưu vào localStorage/sessionStorage
+        const authData = {
+          user: userData,
+          token: data.token,
+          refreshToken: data.refreshToken || null,
+        };
+
+        if (rememberMe) {
+          localStorage.setItem("adminAuth", JSON.stringify(authData));
+        } else {
+          sessionStorage.setItem("adminAuth", JSON.stringify(authData));
+        }
+
+        setUser(userData);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        // Xử lý các lỗi HTTP khác nhau
+        let errorMessage = "Đăng nhập thất bại!";
+
+        try {
+          const errorData = await response.json();
+
+          // Xử lý error message từ API
+          if (errorData.message) {
+            const message = errorData.message.toLowerCase();
+            if (
+              message.includes("invalid credentials") ||
+              message.includes("wrong password") ||
+              message.includes("sai mật khẩu")
+            ) {
+              errorMessage = "Email hoặc mật khẩu không chính xác!";
+            } else if (
+              message.includes("user not found") ||
+              message.includes("không tìm thấy")
+            ) {
+              errorMessage = "Tài khoản không tồn tại!";
+            } else if (
+              message.includes("account disabled") ||
+              message.includes("tài khoản bị khóa")
+            ) {
+              errorMessage = "Tài khoản đã bị khóa!";
+            } else {
+              errorMessage = errorData.message;
+            }
+          }
+        } catch (parseError) {
+          // Nếu không parse được JSON, dùng status code
+          if (response.status === 401) {
+            errorMessage = "Email hoặc mật khẩu không chính xác!";
+          } else if (response.status === 403) {
+            errorMessage = "Tài khoản không có quyền truy cập!";
+          } else if (response.status === 404) {
+            errorMessage = "Tài khoản không tồn tại!";
+          } else if (response.status >= 500) {
+            errorMessage = "Lỗi máy chủ, vui lòng thử lại sau!";
+          }
+        }
+
+        return { success: false, error: errorMessage };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng!",
+      };
     }
-
-    const userData = {
-      name: userEmail.split("@")[0] || "unknown",
-      email: userEmail,
-      role: cleanRole,
-    };
-
-    setIsAuthenticated(true);
-    setUser(userData);
-
-    const authData = {
-      user: userData,
-      token,
-      tokenType,
-      timestamp: Date.now(),
-    };
-
-    if (rememberMe) {
-      localStorage.setItem("adminAuth", JSON.stringify(authData));
-    } else {
-      sessionStorage.setItem("adminAuth", JSON.stringify(authData));
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Login error:", error);
-    // Ném lỗi lên để LoginPage có thể bắt và xử lý
-    if (error instanceof Error && error.message === "ROLE_NOT_ALLOWED") {
-      throw error;
-    }
-    return false;
-  }
-};
+  };
 
   // LOGOUT
   const logout = async () => {
     try {
       await fetch(import.meta.env.VITE_API_URL + "/api/auth/logout", {
         method: "POST",
-        credentials: "include", // BẮT BUỘC để gửi cookie refreshToken
+        credentials: "include", 
       });
     } catch (err) {
       console.error("Logout API error:", err);
@@ -153,29 +247,30 @@ const login = async (
         import.meta.env.VITE_API_URL + "/api/auth/refresh-token",
         {
           method: "POST",
-          credentials: "include", 
+          credentials: "include",
         }
       );
 
       if (!res.ok) return null;
 
       const result = await res.json();
-      const newToken = result?.data?.accessToken; 
+      const newToken = result?.data?.accessToken;
 
       if (!newToken) return null;
 
       // Cập nhật token mới vào storage
-      const authData =
-        JSON.parse(localStorage.getItem("adminAuth")!) ||
-        JSON.parse(sessionStorage.getItem("adminAuth")!);
+      const localAuth = localStorage.getItem("adminAuth");
+      const sessionAuth = sessionStorage.getItem("adminAuth");
+      const authData = localAuth || sessionAuth;
 
       if (authData) {
-        authData.token = newToken;
+        const parsedAuthData = JSON.parse(authData);
+        parsedAuthData.token = newToken;
 
-        if (localStorage.getItem("adminAuth")) {
-          localStorage.setItem("adminAuth", JSON.stringify(authData));
+        if (localAuth) {
+          localStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
         } else {
-          sessionStorage.setItem("adminAuth", JSON.stringify(authData));
+          sessionStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
         }
       }
 
@@ -186,23 +281,25 @@ const login = async (
     }
   };
 
-  // MOCK RESET PASSWORD
+  // RESET PASSWORD (có thể thay bằng API thật)
   const resetPassword = async (
     email: string,
     token: string,
     newPassword: string
   ): Promise<boolean> => {
-    console.log(
-      `Mock Reset Password: Email: ${email}, Token: ${token}, New Password: ${newPassword}`
-    );
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/reset-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, token, newPassword }),
+        }
+      );
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (email === "admin@example.com" && token) {
-      console.log("Password reset successful for admin@example.com");
-      return true;
-    } else {
-      console.log("Password reset failed: Invalid email or token.");
+      return response.ok;
+    } catch (error) {
+      console.error("Reset password error:", error);
       return false;
     }
   };
@@ -214,7 +311,6 @@ const login = async (
         user,
         login,
         logout,
-        loading,
         resetPassword,
         refreshAccessToken,
       }}
@@ -231,3 +327,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// Export helper functions để sử dụng trong components
+export { hasRole, getPrimaryRole };

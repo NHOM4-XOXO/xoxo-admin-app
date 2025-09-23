@@ -30,8 +30,8 @@ import { removeVietnameseTones } from "../components/removeVietnameseTones";
 import SearchComponent from "../components/SearchComponent";
 import FilterDropdown from "../components/FilterDropdown";
 import "../index.css";
-import { set } from "react-hook-form";
 import AddAdminModal from "../components/modals/AddAdminModal";
+import { hasRole } from "../utils/roleUtils";
 
 const optionListRole = [
   { value: "all", label: "Tất cả vai trò" },
@@ -78,7 +78,6 @@ export default function UserManagement() {
   } else if (data && Array.isArray((data as any).data)) {
     users = (data as any).data;
   }
-  console.log("users", users);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -167,7 +166,7 @@ export default function UserManagement() {
       alert("Xóa quyền thất bại");
     }
   };
-  
+
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
     message: string;
@@ -206,8 +205,7 @@ export default function UserManagement() {
           </p>
         </div>
 
-        {/* Button Tạo Admin ở góc phải */}
-        {currentUser?.role === "OWNER" && (
+        {hasRole(currentUser?.roles || "", "OWNER") && (
           <button
             onClick={() => setShowAddAdminModal(true)}
             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
