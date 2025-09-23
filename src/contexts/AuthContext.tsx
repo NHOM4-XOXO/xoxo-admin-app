@@ -54,54 +54,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles: string;
   } | null>(null);
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const localAuth = localStorage.getItem("adminAuth");
-      const sessionAuth = sessionStorage.getItem("adminAuth");
-      const authData = localAuth || sessionAuth;
 
-      if (authData) {
-        try {
+  useEffect(() => {
+    const checkAuthState = () => {
+      try {
+        const savedAuth = localStorage.getItem("adminAuth");
+        const sessionAuth = sessionStorage.getItem("adminAuth");
+        const authData = savedAuth || sessionAuth;
+
+        if (authData) {
           const { user: savedUser, token } = JSON.parse(authData);
 
-          // Kiểm tra user có quyền admin không (từ string roles)
-          const userRoles = savedUser.roles || "";
-
-          // QUAN TRỌNG: Nếu roles từ storage chưa được clean, phải clean
-          const cleanRoles = userRoles.includes("[")
-            ? userRoles.replace(/[\[\]]/g, "")
-            : userRoles;
-
-          const hasAdminAccess =
-            hasRole(cleanRoles, "ADMIN") || hasRole(cleanRoles, "OWNER");
-
-          if (hasAdminAccess && token) {
-            setUser(savedUser);
+          if (savedUser && token) {
             setIsAuthenticated(true);
+            setUser(savedUser);
           } else {
             localStorage.removeItem("adminAuth");
             sessionStorage.removeItem("adminAuth");
           }
-        } catch (error) {
-          console.error("Error parsing auth data:", error);
-          localStorage.removeItem("adminAuth");
-          sessionStorage.removeItem("adminAuth");
         }
+      } catch (error) {
+        console.error("Error checking auth state:", error);
+        localStorage.removeItem("adminAuth");
+        sessionStorage.removeItem("adminAuth");
       }
     };
 
-    checkAuth();
+    checkAuthState();
   }, []);
 
-  // LOGIN
+  // LOGIN - Thay thế function login hiện tại
   const login = async (
     email: string,
     password: string,
-    rememberMe: boolean = false
+    rememberMe = false
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+      const res = await fetch(
+        import.meta.env.VITE_API_URL + "/api/auth/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -110,102 +100,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       );
 
-      if (response.ok) {
-        const result = await response.json();
+      if (!res.ok) {
+        // Sử dụng error handling đơn giản
+        let errorMessage = "Email hoặc mật khẩu không chính xác!";
 
-        // Handle flexible response format: result.data hoặc result trực tiếp
-        const data = result.data || result;
-
-        if (!data || !data.token) {
-          return {
-            success: false,
-            error: "Phản hồi từ server không hợp lệ",
-          };
+        if (res.status === 403) {
+          errorMessage = "Tài khoản không có quyền truy cập Admin Panel!";
+        } else if (res.status === 423) {
+          errorMessage = "Tài khoản đã bị khóa tạm thời!";
+        } else if (res.status === 429) {
+          errorMessage = "Đăng nhập quá nhiều lần, vui lòng thử lại sau!";
         }
 
-        // Lấy roles từ các field có thể: role, roles, hoặc userRoles
-        const userRoles = data.role || data.roles || data.userRoles || "";
-
-        // Clean up roles string - bỏ dấu [ ]
-        const cleanRoles = userRoles.replace(/[\[\]]/g, "");
-
-        // Check nếu user có role ADMIN hoặc OWNER
-        const hasAdminAccess =
-          hasRole(cleanRoles, "ADMIN") || hasRole(cleanRoles, "OWNER");
-
-        if (!hasAdminAccess) {
-          return {
-            success: false,
-            error: "Tài khoản của bạn không có quyền truy cập Admin Panel!",
-          };
-        }
-
-        // Xác định primary role (ưu tiên OWNER)
-        const primaryRole = getPrimaryRole(cleanRoles);
-
-        // Tạo name từ nhiều nguồn có thể: name, username, firstName+lastName, hoặc email
-        const userName = data.name || 
-                        data.username || 
-                        (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : null) ||
-                        data.email?.split("@")[0];
-        
-        const displayName = userName ? 
-          (userName.charAt(0).toUpperCase() + userName.slice(1)) : 
-          "Admin User";
-
-        // Lưu thông tin user với flexible email field
-        const userData = {
-          name: displayName,
-          email: data.email || data.userEmail || data.emailAddress,
-          role: primaryRole,
-          roles: cleanRoles, // Lưu clean roles
-        };
-
-        // Lưu vào localStorage/sessionStorage với flexible token fields
-        const authData = {
-          user: userData,
-          token: data.token || data.accessToken || data.authToken,
-          refreshToken: data.refreshToken || data.refresh_token || null,
-        };
-
-        if (rememberMe) {
-          localStorage.setItem("adminAuth", JSON.stringify(authData));
-        } else {
-          sessionStorage.setItem("adminAuth", JSON.stringify(authData));
-        }
-
-      setUser(userData);
-      setIsAuthenticated(true);
-      return { success: true };
-    } else {
-      // Đối với login, tất cả lỗi đều coi như sai thông tin đăng nhập
-      let errorMessage = "Email hoặc mật khẩu không chính xác!";
-      
-      // Chỉ phân biệt một số trường hợp đặc biệt
-      if (response.status === 403) {
-        errorMessage = "Tài khoản không có quyền truy cập Admin Panel!";
-      } else if (response.status === 423) {
-        errorMessage = "Tài khoản đã bị khóa tạm thời!";
-      } else if (response.status === 429) {
-        errorMessage = "Đăng nhập quá nhiều lần, vui lòng thử lại sau!";
+        return { success: false, error: errorMessage };
       }
 
-      return { success: false, error: errorMessage };
+      const result = await res.json();
+      const { token, email: userEmail, role, tokenType } = result.data || {};
+
+      if (!token || !userEmail) {
+        return { success: false, error: "Phản hồi từ server không hợp lệ" };
+      }
+
+      // Check admin access
+      const cleanRole = role ? role.replace(/\[|\]/g, "") : "";
+      const hasAdminAccess =
+        cleanRole.includes("ADMIN") || cleanRole.includes("OWNER");
+
+      if (!hasAdminAccess) {
+        return {
+          success: false,
+          error: "Tài khoản không có quyền truy cập Admin Panel!",
+        };
+      }
+
+      const userData = {
+        name: userEmail.split("@")[0] || "Admin User",
+        email: userEmail,
+        role: cleanRole,
+        roles: cleanRole, 
+      };
+
+      setIsAuthenticated(true);
+      setUser(userData);
+
+      const authData = {
+        user: userData,
+        token,
+        tokenType,
+        refreshToken: null,
+        timestamp: Date.now(),
+      };
+
+      if (rememberMe) {
+        localStorage.setItem("adminAuth", JSON.stringify(authData));
+        sessionStorage.removeItem("adminAuth");
+      } else {
+        sessionStorage.setItem("adminAuth", JSON.stringify(authData));
+        localStorage.removeItem("adminAuth");
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        error: getNetworkErrorMessage() || "Đã xảy ra lỗi mạng!",
+      };
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: getNetworkErrorMessage() || "Đã xảy ra lỗi mạng!",
-    };
-  }
-};
+  };
 
   // LOGOUT
   const logout = async () => {
     try {
       await fetch(import.meta.env.VITE_API_URL + "/api/auth/logout", {
         method: "POST",
-        credentials: "include", 
+        credentials: "include",
       });
     } catch (err) {
       console.error("Logout API error:", err);
@@ -257,8 +227,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   };
-
-  // RESET PASSWORD (có thể thay bằng API thật)
+  
+  // RESET PASSWORD
   const resetPassword = async (
     email: string,
     token: string,

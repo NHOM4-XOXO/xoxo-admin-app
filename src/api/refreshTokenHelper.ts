@@ -13,21 +13,35 @@ export async function refreshAccessToken(localStorageKey = "adminAuth") {
     if (!res.ok) throw new Error("Refresh token failed");
     const data = await res.json();
     if (data?.data) {
-      // Giữ lại toàn bộ thông tin cũ, chỉ cập nhật token mới
-      const oldAuth = localStorage.getItem(localStorageKey);
+      const localAuth = localStorage.getItem(localStorageKey);
+      const sessionAuth = sessionStorage.getItem(localStorageKey);
+
       let oldData = {};
-      if (oldAuth) {
-        oldData = JSON.parse(oldAuth);
+      let targetStorage;
+
+      if (localAuth) {
+        oldData = JSON.parse(localAuth);
+        targetStorage = localStorage;
+      } else if (sessionAuth) {
+        oldData = JSON.parse(sessionAuth);
+        targetStorage = sessionStorage;
+      } else {
+        throw new Error("No auth data found");
       }
-      localStorage.setItem(
+
+      targetStorage.setItem(
         localStorageKey,
         JSON.stringify({ ...oldData, token: data.data })
       );
+
       return data.data;
     }
+
     throw new Error("No token in refresh response");
   } catch (err) {
+    console.error("Refresh token error:", err);
     localStorage.removeItem(localStorageKey);
+    sessionStorage.removeItem(localStorageKey);
     return null;
   }
 }
