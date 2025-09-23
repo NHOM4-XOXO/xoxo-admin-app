@@ -6,7 +6,9 @@ import { refreshAccessToken } from "./refreshTokenHelper";
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL + "/api/admin/users",
   prepareHeaders: (headers) => {
-    const authData = localStorage.getItem("adminAuth");
+    const localAuth = localStorage.getItem("adminAuth");
+    const sessionAuth = sessionStorage.getItem("adminAuth");
+    const authData = localAuth || sessionAuth;
     if (authData) {
       const { token } = JSON.parse(authData);
       if (token) {
