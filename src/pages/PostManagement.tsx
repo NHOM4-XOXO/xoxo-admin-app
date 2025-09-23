@@ -25,7 +25,6 @@ import "../index.css";
 import FilterDropdown from "../components/FilterDropdown";
 import ConfirmModal from "../components/modals/ConfirmModal";
 
-
 const optionListStatus = [
   { value: "all", label: "Tất cả trạng  thái" },
   { value: "ACTIVE", label: "Đã đăng" },
@@ -52,7 +51,7 @@ export default function PostManagement() {
     null
   );
   const [showPostModal, setShowPostModal] = useState(false);
-  
+
   const [filteredPosts, setFilteredPosts] = useState<PostItemResponse[]>([]);
 
   //Pagination state
@@ -142,7 +141,7 @@ export default function PostManagement() {
         status: newStatus,
       }).unwrap();
     } catch (error) {
-      console.error("Failed to update post status:", error);
+      // Handle error silently or show user notification
     }
   };
 
@@ -552,7 +551,7 @@ function getStatusBgColor(status: string) {
         colorClass: "bg-green-600 hover:bg-green-700",
         titleClass: "text-green-600",
       };
-      case "HIDDEN":
+    case "HIDDEN":
       return {
         colorClass: "bg-yellow-600 hover:bg-yellow-700",
         titleClass: "text-yellow-600",

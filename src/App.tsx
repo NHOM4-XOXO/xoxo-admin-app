@@ -12,6 +12,8 @@ import ReportManagement from "./pages/ReportManagement";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import GroupManagement from "./pages/GroupManagement";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
@@ -86,6 +88,8 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
     </Routes>
   );
 }

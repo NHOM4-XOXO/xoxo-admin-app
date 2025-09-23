@@ -38,8 +38,6 @@ export default function ForgotPasswordModal({
         }, 3000);
       }
     } catch (error: any) {
-      console.error("Forgot password error:", error);
-
       if (error?.data?.message) {
         setMessage(error.data.message);
       } else if (error?.status === 404) {

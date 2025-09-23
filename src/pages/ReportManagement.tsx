@@ -39,7 +39,6 @@ export default function ReportManagement() {
   const { data: reports = [], isLoading, error } = useGetReportsQuery();
   const [updateReport, { isLoading: isUpdating }] = useUpdateReportMutation();
   const [deleteReport, { isLoading: isDeleting }] = useDeleteReportMutation();
-  
 
   // Local state for UI
   const [searchTerm, setSearchTerm] = useState("");
@@ -159,7 +158,7 @@ export default function ReportManagement() {
         ...(adminNotes && { adminNotes }),
       }).unwrap();
     } catch (error) {
-      console.error("Failed to update report status:", error);
+      // Handle error silently or show user notification
     }
   };
 
@@ -582,7 +581,7 @@ export default function ReportManagement() {
                   )}
 
                   {selectedReport.status === "ESCALATED" &&
-                    (role === "OWNER") && (
+                    role === "OWNER" && (
                       <div className="flex justify-end space-x-3">
                         <button
                           onClick={() =>

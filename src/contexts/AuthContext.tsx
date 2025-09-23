@@ -5,6 +5,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { getNetworkErrorMessage } from "../utils/errorUtils";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -112,8 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const result = await response.json();
 
-        // API trả về data trong result.data
-        const data = result.data;
+        // Handle flexible response format: result.data hoặc result trực tiếp
+        const data = result.data || result;
 
         if (!data || !data.token) {
           return {
@@ -122,7 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        const userRoles = data.role || "";
+        // Lấy roles từ các field có thể: role, roles, hoặc userRoles
+        const userRoles = data.role || data.roles || data.userRoles || "";
 
         // Clean up roles string - bỏ dấu [ ]
         const cleanRoles = userRoles.replace(/[\[\]]/g, "");
@@ -141,24 +143,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Xác định primary role (ưu tiên OWNER)
         const primaryRole = getPrimaryRole(cleanRoles);
 
-        // Tạo name từ email (vì API không trả firstName, lastName)
-        const emailName = data.email.split("@")[0];
-        const displayName =
-          emailName.charAt(0).toUpperCase() + emailName.slice(1);
+        // Tạo name từ nhiều nguồn có thể: name, username, firstName+lastName, hoặc email
+        const userName = data.name || 
+                        data.username || 
+                        (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : null) ||
+                        data.email?.split("@")[0];
+        
+        const displayName = userName ? 
+          (userName.charAt(0).toUpperCase() + userName.slice(1)) : 
+          "Admin User";
 
-        // Lưu thông tin user
+        // Lưu thông tin user với flexible email field
         const userData = {
-          name: displayName, // Dùng email làm name
-          email: data.email,
+          name: displayName,
+          email: data.email || data.userEmail || data.emailAddress,
           role: primaryRole,
           roles: cleanRoles, // Lưu clean roles
         };
 
-        // Lưu vào localStorage/sessionStorage
+        // Lưu vào localStorage/sessionStorage với flexible token fields
         const authData = {
           user: userData,
-          token: data.token,
-          refreshToken: data.refreshToken || null,
+          token: data.token || data.accessToken || data.authToken,
+          refreshToken: data.refreshToken || data.refresh_token || null,
         };
 
         if (rememberMe) {
@@ -167,61 +174,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           sessionStorage.setItem("adminAuth", JSON.stringify(authData));
         }
 
-        setUser(userData);
-        setIsAuthenticated(true);
-        return { success: true };
-      } else {
-        // Xử lý các lỗi HTTP khác nhau
-        let errorMessage = "Đăng nhập thất bại!";
-
-        try {
-          const errorData = await response.json();
-
-          // Xử lý error message từ API
-          if (errorData.message) {
-            const message = errorData.message.toLowerCase();
-            if (
-              message.includes("invalid credentials") ||
-              message.includes("wrong password") ||
-              message.includes("sai mật khẩu")
-            ) {
-              errorMessage = "Email hoặc mật khẩu không chính xác!";
-            } else if (
-              message.includes("user not found") ||
-              message.includes("không tìm thấy")
-            ) {
-              errorMessage = "Tài khoản không tồn tại!";
-            } else if (
-              message.includes("account disabled") ||
-              message.includes("tài khoản bị khóa")
-            ) {
-              errorMessage = "Tài khoản đã bị khóa!";
-            } else {
-              errorMessage = errorData.message;
-            }
-          }
-        } catch (parseError) {
-          // Nếu không parse được JSON, dùng status code
-          if (response.status === 401) {
-            errorMessage = "Email hoặc mật khẩu không chính xác!";
-          } else if (response.status === 403) {
-            errorMessage = "Tài khoản không có quyền truy cập!";
-          } else if (response.status === 404) {
-            errorMessage = "Tài khoản không tồn tại!";
-          } else if (response.status >= 500) {
-            errorMessage = "Lỗi máy chủ, vui lòng thử lại sau!";
-          }
-        }
-
-        return { success: false, error: errorMessage };
+      setUser(userData);
+      setIsAuthenticated(true);
+      return { success: true };
+    } else {
+      // Đối với login, tất cả lỗi đều coi như sai thông tin đăng nhập
+      let errorMessage = "Email hoặc mật khẩu không chính xác!";
+      
+      // Chỉ phân biệt một số trường hợp đặc biệt
+      if (response.status === 403) {
+        errorMessage = "Tài khoản không có quyền truy cập Admin Panel!";
+      } else if (response.status === 423) {
+        errorMessage = "Tài khoản đã bị khóa tạm thời!";
+      } else if (response.status === 429) {
+        errorMessage = "Đăng nhập quá nhiều lần, vui lòng thử lại sau!";
       }
-    } catch (error) {
-      return {
-        success: false,
-        error: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng!",
-      };
+
+      return { success: false, error: errorMessage };
     }
-  };
+  } catch (error) {
+    return {
+      success: false,
+      error: getNetworkErrorMessage() || "Đã xảy ra lỗi mạng!",
+    };
+  }
+};
 
   // LOGOUT
   const logout = async () => {

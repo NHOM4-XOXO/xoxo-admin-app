@@ -78,8 +78,6 @@ export default function ResetPasswordPage() {
         });
       }, 3000);
     } catch (error: any) {
-      console.error("Reset password error:", error); // Debug
-
       if (error?.data?.message) {
         const message = error.data.message.toLowerCase();
         if (message.includes("token expired") || message.includes("hết hạn")) {

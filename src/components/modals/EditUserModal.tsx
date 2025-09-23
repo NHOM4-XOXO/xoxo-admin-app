@@ -71,7 +71,7 @@ export default function EditUserModal({ user, onClose }: EditUserModalProps) {
       }).unwrap();
       onClose();
     } catch (error) {
-      console.error("Cập nhật thất bại:", error);
+      // Handle error silently or show user notification
     }
   };
 

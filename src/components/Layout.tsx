@@ -172,7 +172,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col h-full bg-white border-r border-gray-200">
         <div className="flex items-center h-16 px-6 border-b border-gray-200">
           <img
-            src="/logo_xoxo_500px-removebg-preview.png"
+            src="dist/xoxo-lg.png"
             alt="Logo"
             className="h-8 w-auto"
           />

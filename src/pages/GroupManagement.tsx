@@ -148,8 +148,7 @@ export default function GroupManagement() {
     try {
       await updateGroupStatus({ groupId, status: newStatus }).unwrap();
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to update group status", err);
+      // Handle error silently or show user notification
     }
   };
 
