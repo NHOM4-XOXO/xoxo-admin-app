@@ -47,7 +47,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="mb-8">
             <img
-              src="dist/xoxo-lg.png"
+              src="public/xoxo-lg.png"
               alt="XOXO Logo"
               className="h-16 w-auto mx-auto"
             />
