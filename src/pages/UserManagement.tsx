@@ -137,7 +137,6 @@ export default function UserManagement() {
         setConfirmModal(null);
         refetch();
       } catch (err) {
-        console.error("Toggle status failed", err);
         if (err && typeof err === "object") {
           alert("API error: " + JSON.stringify(err));
         }
@@ -151,7 +150,6 @@ export default function UserManagement() {
       setAssignRoleModal(null);
       refetch();
     } catch (err) {
-      console.error("Assign role failed", err);
       alert("Gán quyền thất bại");
     }
   };
@@ -162,7 +160,6 @@ export default function UserManagement() {
       setAssignRoleModal(null);
       refetch();
     } catch (err) {
-      console.error("Remove role failed", err);
       alert("Xóa quyền thất bại");
     }
   };
