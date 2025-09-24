@@ -5,17 +5,22 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { getNetworkErrorMessage } from "../utils/errorUtils";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: { name: string; email: string; role: string } | null;
+  user: {
+    name: string;
+    email: string;
+    role: string;
+    roles: string;
+  } | null;
   login: (
     email: string,
     password: string,
     rememberMe?: boolean
-  ) => Promise<boolean>;
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  loading: boolean;
   resetPassword: (
     email: string,
     token: string,
@@ -24,6 +29,19 @@ interface AuthContextType {
   refreshAccessToken: () => Promise<string | null>;
 }
 
+// Helper function để check role từ string
+const hasRole = (userRoles: string, targetRole: string): boolean => {
+  if (!userRoles) return false;
+  return userRoles.includes(targetRole);
+};
+
+// Helper function để lấy primary role
+const getPrimaryRole = (userRoles: string): string => {
+  if (!userRoles) return "USER";
+  if (hasRole(userRoles, "OWNER")) return "OWNER";
+  if (hasRole(userRoles, "ADMIN")) return "ADMIN";
+  return "USER";
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -33,15 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string;
     email: string;
     role: string;
+    roles: string;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const checkAuthState = () => {
       try {
         const savedAuth = localStorage.getItem("adminAuth");
         const sessionAuth = sessionStorage.getItem("adminAuth");
-
         const authData = savedAuth || sessionAuth;
 
         if (authData) {
@@ -59,82 +77,105 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Error checking auth state:", error);
         localStorage.removeItem("adminAuth");
         sessionStorage.removeItem("adminAuth");
-      } finally {
-        setLoading(false);
       }
     };
 
     checkAuthState();
   }, []);
 
-  // LOGIN
-const login = async (
-  email: string,
-  password: string,
-  rememberMe: boolean = false
-): Promise<boolean> => {
-  try {
-    const res = await fetch(import.meta.env.VITE_API_URL + "/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-      credentials: "include", // để BE set cookie refreshToken
-    });
+  // LOGIN - Thay thế function login hiện tại
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe = false
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch(
+        import.meta.env.VITE_API_URL + "/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+          credentials: "include",
+        }
+      );
 
-    if (!res.ok) return false;
+      if (!res.ok) {
+        // Sử dụng error handling đơn giản
+        let errorMessage = "Email hoặc mật khẩu không chính xác!";
 
-    const result = await res.json();
-    const { token, email: userEmail, role, tokenType } = result.data || {};
+        if (res.status === 403) {
+          errorMessage = "Tài khoản không có quyền truy cập Admin Panel!";
+        } else if (res.status === 423) {
+          errorMessage = "Tài khoản đã bị khóa tạm thời!";
+        } else if (res.status === 429) {
+          errorMessage = "Đăng nhập quá nhiều lần, vui lòng thử lại sau!";
+        }
 
-    if (!token || !userEmail) return false;
+        return { success: false, error: errorMessage };
+      }
 
-    // Kiểm tra role có phải admin không
-    const cleanRole = role ? role.replace(/\[|\]/g, "") : "USER";
-    const allowedRoles = ["ADMIN", "OWNER"];
+      const result = await res.json();
+      const { token, email: userEmail, role, tokenType } = result.data || {};
 
-    if (!allowedRoles.includes(cleanRole)) {
-      throw new Error("ROLE_NOT_ALLOWED");
+      if (!token || !userEmail) {
+        return { success: false, error: "Phản hồi từ server không hợp lệ" };
+      }
+
+      // Check admin access
+      const cleanRole = role ? role.replace(/\[|\]/g, "") : "";
+      const hasAdminAccess =
+        cleanRole.includes("ADMIN") || cleanRole.includes("OWNER");
+
+      if (!hasAdminAccess) {
+        return {
+          success: false,
+          error: "Tài khoản không có quyền truy cập Admin Panel!",
+        };
+      }
+
+      const userData = {
+        name: userEmail.split("@")[0] || "Admin User",
+        email: userEmail,
+        role: cleanRole,
+        roles: cleanRole, 
+      };
+
+      setIsAuthenticated(true);
+      setUser(userData);
+
+      const authData = {
+        user: userData,
+        token,
+        tokenType,
+        refreshToken: null,
+        timestamp: Date.now(),
+      };
+
+      if (rememberMe) {
+        localStorage.setItem("adminAuth", JSON.stringify(authData));
+        sessionStorage.removeItem("adminAuth");
+      } else {
+        sessionStorage.setItem("adminAuth", JSON.stringify(authData));
+        localStorage.removeItem("adminAuth");
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        error: getNetworkErrorMessage() || "Đã xảy ra lỗi mạng!",
+      };
     }
-
-    const userData = {
-      name: userEmail.split("@")[0] || "unknown",
-      email: userEmail,
-      role: cleanRole,
-    };
-
-    setIsAuthenticated(true);
-    setUser(userData);
-
-    const authData = {
-      user: userData,
-      token,
-      tokenType,
-      timestamp: Date.now(),
-    };
-
-    if (rememberMe) {
-      localStorage.setItem("adminAuth", JSON.stringify(authData));
-    } else {
-      sessionStorage.setItem("adminAuth", JSON.stringify(authData));
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Login error:", error);
-    // Ném lỗi lên để LoginPage có thể bắt và xử lý
-    if (error instanceof Error && error.message === "ROLE_NOT_ALLOWED") {
-      throw error;
-    }
-    return false;
-  }
-};
+  };
 
   // LOGOUT
   const logout = async () => {
     try {
       await fetch(import.meta.env.VITE_API_URL + "/api/auth/logout", {
         method: "POST",
-        credentials: "include", // BẮT BUỘC để gửi cookie refreshToken
+        credentials: "include",
       });
     } catch (err) {
       console.error("Logout API error:", err);
@@ -153,29 +194,30 @@ const login = async (
         import.meta.env.VITE_API_URL + "/api/auth/refresh-token",
         {
           method: "POST",
-          credentials: "include", 
+          credentials: "include",
         }
       );
 
       if (!res.ok) return null;
 
       const result = await res.json();
-      const newToken = result?.data?.accessToken; 
+      const newToken = result?.data?.accessToken;
 
       if (!newToken) return null;
 
       // Cập nhật token mới vào storage
-      const authData =
-        JSON.parse(localStorage.getItem("adminAuth")!) ||
-        JSON.parse(sessionStorage.getItem("adminAuth")!);
+      const localAuth = localStorage.getItem("adminAuth");
+      const sessionAuth = sessionStorage.getItem("adminAuth");
+      const authData = localAuth || sessionAuth;
 
       if (authData) {
-        authData.token = newToken;
+        const parsedAuthData = JSON.parse(authData);
+        parsedAuthData.token = newToken;
 
-        if (localStorage.getItem("adminAuth")) {
-          localStorage.setItem("adminAuth", JSON.stringify(authData));
+        if (localAuth) {
+          localStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
         } else {
-          sessionStorage.setItem("adminAuth", JSON.stringify(authData));
+          sessionStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
         }
       }
 
@@ -185,24 +227,26 @@ const login = async (
       return null;
     }
   };
-
-  // MOCK RESET PASSWORD
+  
+  // RESET PASSWORD
   const resetPassword = async (
     email: string,
     token: string,
     newPassword: string
   ): Promise<boolean> => {
-    console.log(
-      `Mock Reset Password: Email: ${email}, Token: ${token}, New Password: ${newPassword}`
-    );
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/reset-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, token, newPassword }),
+        }
+      );
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    if (email === "admin@example.com" && token) {
-      console.log("Password reset successful for admin@example.com");
-      return true;
-    } else {
-      console.log("Password reset failed: Invalid email or token.");
+      return response.ok;
+    } catch (error) {
+      console.error("Reset password error:", error);
       return false;
     }
   };
@@ -214,7 +258,6 @@ const login = async (
         user,
         login,
         logout,
-        loading,
         resetPassword,
         refreshAccessToken,
       }}
@@ -231,3 +274,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// Export helper functions để sử dụng trong components
+export { hasRole, getPrimaryRole };

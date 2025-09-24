@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,6 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import ForgotPasswordModal from "../components/modals/ForgotPasswordModal";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -20,33 +21,119 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [errorEmail, setErrorEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  const location = useLocation();
+  const successMessage = location.state?.message;
 
   const isValidEmail = (email: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
   };
 
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  // Nếu đang loading hoặc đã có user, hiện loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          {/* Logo */}
+          <div className="mb-8">
+            <img
+              src="public/xoxo-lg.png"
+              alt="XOXO Logo"
+              className="h-16 w-auto mx-auto"
+            />
+          </div>
+
+          {/* Loading Animation */}
+          <div className="relative mb-6">
+            {/* Outer spinning ring */}
+            <div className="w-16 h-16 mx-auto border-4 border-blue-200 rounded-full animate-spin border-t-blue-600"></div>
+
+            {/* Inner pulsing dot */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Loading Text */}
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Đang kiểm tra đăng nhập...
+            </h2>
+            <p className="text-sm text-gray-500">Vui lòng đợi trong giây lát</p>
+          </div>
+
+          {/* Loading Dots Animation */}
+          <div className="flex justify-center space-x-1 mt-4">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+            <div
+              className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+              style={{ animationDelay: "0.1s" }}
+            ></div>
+            <div
+              className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+              style={{ animationDelay: "1s" }}
+            ></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    // Clear previous errors
     setError("");
+    setErrorEmail("");
+
+    // Validation
+    if (!email.trim()) {
+      setErrorEmail("Email không được để trống");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setErrorEmail("Email không hợp lệ");
+      return;
+    }
+
+    if (!password) {
+      setError("Mật khẩu không được để trống");
+      return;
+    }
 
     try {
-      const success = await login(email, password, rememberMe);
-      if (!success) {
-        setError("Email hoặc mật khẩu không đúng");
+      setLoading(true);
+
+      const result = await login(email, password);
+
+      // AuthContext always returns { success, error? }
+      if (result.success) {
+        // Keep loading for navigation - AuthContext will handle redirect
+      } else {
+        setLoading(false);
+        setError(result.error || "Đăng nhập thất bại!");
       }
     } catch (error: any) {
-      if (error?.message === "ROLE_NOT_ALLOWED") {
-        setError("Bạn không có quyền truy cập vào hệ thống quản trị");
-      } else {
-        setError("Đã xảy ra lỗi, vui lòng thử lại");
-      }
-    } finally {
       setLoading(false);
+
+      if (error?.message) {
+        setError(error.message);
+      } else if (typeof error === "string") {
+        setError(error);
+      } else {
+        setError("Đã xảy ra lỗi không mong muốn!");
+      }
     }
   };
 
@@ -67,7 +154,12 @@ export default function LoginPage() {
               Đăng nhập vào bảng điều khiển quản trị
             </p>
           </div>
-
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6 flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-green-600 text-sm">{successMessage}</span>
+            </div>
+          )}
           {/* Form */}
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-5">
@@ -125,6 +217,7 @@ export default function LoginPage() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="off"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -147,7 +240,7 @@ export default function LoginPage() {
             </div>
 
             {/* Remember Me */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   id="remember-me"
@@ -173,7 +266,7 @@ export default function LoginPage() {
                   Quên mật khẩu?
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Error Message */}
             {error && (
@@ -207,11 +300,17 @@ export default function LoginPage() {
           <div className="text-center">
             <p className="text-xs text-gray-500">
               Bằng cách đăng nhập, bạn đồng ý với{" "}
-              <a href="#" className="text-blue-600 hover:text-blue-500">
+              <a
+                href="/terms-of-service"
+                className="text-blue-600 hover:text-blue-500"
+              >
                 Điều khoản dịch vụ
               </a>{" "}
               và{" "}
-              <a href="#" className="text-blue-600 hover:text-blue-500">
+              <a
+                href="/privacy-policy"
+                className="text-blue-600 hover:text-blue-500"
+              >
                 Chính sách bảo mật
               </a>
             </p>

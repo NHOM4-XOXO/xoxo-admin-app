@@ -46,7 +46,7 @@ export default function AddUserModal({ onClose }: AddUserModalProps) {
       }).unwrap();
       onClose();
     } catch (error) {
-      console.error("Failed to create user:", error);
+      // Handle error silently or show user notification
     }
   };
 
