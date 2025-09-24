@@ -7,9 +7,9 @@ export const dashboardApi = createApi({
     baseUrl: import.meta.env.VITE_API_URL + "/dashboard",
     prepareHeaders: (headers) => {
       // Lấy token từ localStorage hoặc sessionStorage
-      const authData =
-        localStorage.getItem("adminAuth") ||
-        sessionStorage.getItem("adminAuth");
+      const localAuth = localStorage.getItem("adminAuth");
+      const sessionAuth = sessionStorage.getItem("adminAuth");
+      const authData = localAuth || sessionAuth;
       if (authData) {
         const { token } = JSON.parse(authData);
         if (token) {

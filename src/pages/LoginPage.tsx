@@ -31,13 +31,6 @@ export default function LoginPage() {
     return regex.test(email);
   };
 
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && user) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, loading, navigate]);
 
   // Nếu đang loading hoặc đã có user, hiện loading
   if (loading) {
@@ -240,22 +233,8 @@ export default function LoginPage() {
             </div>
 
             {/* Remember Me */}
-            {/* <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-700 cursor-pointer"
-                >
-                  Ghi nhớ đăng nhập
-                </label>
               </div>
               <div className="text-sm">
                 <button
@@ -266,7 +245,7 @@ export default function LoginPage() {
                   Quên mật khẩu?
                 </button>
               </div>
-            </div> */}
+            </div>
 
             {/* Error Message */}
             {error && (
