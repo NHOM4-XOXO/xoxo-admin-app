@@ -17,6 +17,22 @@ export type PostItemResponse = {
   authorFirstName: string;
   authorLastName: string;
   authorAvatarUrl: string;
-  createdAt: string; // FE nên dùng string ISO
+  createdAt: string;
   updatedAt: string;
+  media?: MediaItem[];
+};
+export type MediaItem = {
+  id: number;
+  mediaUrl: string;
+  mediaType: "IMAGE" | "VIDEO" | string;
+  originalFilename?: string;
+  fileSize?: number;
+  createdAt?: string;
+  uploadedBy?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+    username?: string;
+  };
 };

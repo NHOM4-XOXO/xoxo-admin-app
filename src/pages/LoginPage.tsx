@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,7 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import ForgotPasswordModal from "../components/modals/ForgotPasswordModal";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [errorEmail, setErrorEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const location = useLocation();
   const successMessage = location.state?.message;
 

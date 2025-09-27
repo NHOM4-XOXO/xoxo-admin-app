@@ -13,3 +13,21 @@
 .tippy-box[data-theme~="small-text"] .tippy-arrow {
   @apply text-gray-300;
 }
+.line-clamp-2,
+.truncate-multiline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal; /* allow wrapping so clamp works */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+/* single-line truncate */
+.truncate-short {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

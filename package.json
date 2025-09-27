@@ -22,6 +22,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.60.0",
+    "react-lines-ellipsis": "^0.16.1",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.3",
     "recharts": "^3.1.0",
@@ -31,8 +32,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
+    "@tailwindcss/line-clamp": "^0.4.4",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@types/react-lines-ellipsis": "^0.15.6",
     "@vitejs/plugin-react": "^4.6.0",
     "concurrently": "^9.2.0",
     "eslint": "^9.29.0",
