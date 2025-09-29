@@ -27,6 +27,7 @@ interface AuthContextType {
     newPassword: string
   ) => Promise<boolean>;
   refreshAccessToken: () => Promise<string | null>;
+  loading: boolean;
 }
 
 // Helper function để check role từ string
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles: string;
   } | null>(null);
 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuthState = () => {
@@ -77,6 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Error checking auth state:", error);
         localStorage.removeItem("adminAuth");
         sessionStorage.removeItem("adminAuth");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -189,43 +193,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // REFRESH TOKEN
   const refreshAccessToken = async (): Promise<string | null> => {
-    try {
-      const res = await fetch(
-        import.meta.env.VITE_API_URL + "/api/auth/refresh-token",
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
+     try {
+       const localAuth = localStorage.getItem("adminAuth");
+       const sessionAuth = sessionStorage.getItem("adminAuth");
+       const authData = localAuth || sessionAuth;
 
-      if (!res.ok) return null;
+       if (!authData) return null;
 
-      const result = await res.json();
-      const newToken = result?.data?.accessToken;
+       const { token: currentToken } = JSON.parse(authData);
+       if (!currentToken) return null;
 
-      if (!newToken) return null;
+       // ✅ Gửi current token để refresh (một số BE dùng access token để refresh)
+       const res = await fetch(
+         import.meta.env.VITE_API_URL + "/api/auth/refresh-token",
+         {
+           method: "POST",
+           headers: {
+             "Content-Type": "application/json",
+             Authorization: `Bearer ${currentToken}`, // ← Thêm current token
+           },
+           credentials: "include",
+           body: JSON.stringify({
+             token: currentToken, // ← Hoặc trong body
+           }),
+         }
+       );
 
-      // Cập nhật token mới vào storage
-      const localAuth = localStorage.getItem("adminAuth");
-      const sessionAuth = sessionStorage.getItem("adminAuth");
-      const authData = localAuth || sessionAuth;
+       if (!res.ok) {
+         console.log("Refresh failed with status:", res.status);
+         return null;
+       }
 
-      if (authData) {
-        const parsedAuthData = JSON.parse(authData);
-        parsedAuthData.token = newToken;
+       const result = await res.json();
+       console.log("Refresh response:", result);
 
-        if (localAuth) {
-          localStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
-        } else {
-          sessionStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
-        }
-      }
+       const newToken = result?.data?.accessToken || result?.data?.token;
 
-      return newToken;
-    } catch (err) {
-      console.error("Error refreshing token:", err);
-      return null;
-    }
+       if (!newToken) return null;
+
+       // Update token
+       const parsedAuthData = JSON.parse(authData);
+       parsedAuthData.token = newToken;
+
+       if (localAuth) {
+         localStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
+       } else {
+         sessionStorage.setItem("adminAuth", JSON.stringify(parsedAuthData));
+       }
+
+       return newToken;
+     } catch (err) {
+       console.error("Error refreshing token:", err);
+       return null;
+     }
   };
   
   // RESET PASSWORD
@@ -260,6 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         resetPassword,
         refreshAccessToken,
+        loading,
       }}
     >
       {children}

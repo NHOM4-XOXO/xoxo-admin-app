@@ -2,7 +2,6 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { UserType } from "../types/User.type";
 import { refreshAccessToken } from "./refreshTokenHelper";
 
-// Wrapper baseQuery tự động refresh token khi gặp lỗi 401
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL + "/api/admin/users",
   prepareHeaders: (headers) => {
