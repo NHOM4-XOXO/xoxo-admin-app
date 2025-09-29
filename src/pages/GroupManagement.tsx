@@ -96,6 +96,11 @@ function getPrivacyBadge(privacy: GroupPrivacy) {
 
 export default function GroupManagement() {
   const { data: groups = [], isLoading, error } = useGetGroupsQuery();
+  const groupsSorted = [...(Array.isArray(groups) ? groups : [])].sort(
+    (a: any, b: any) =>
+      Date.parse(b.createdAt || "") - Date.parse(a.createdAt || "")
+  );
+
   const [updateGroupStatus, { isLoading: isUpdating }] =
     useUpdateGroupStatusMutation();
   const [selectedGroup, setSelectedGroup] = useState<GroupItemResponse | null>(
@@ -123,7 +128,7 @@ export default function GroupManagement() {
   useEffect(() => {
     const keyword = searchTerm.toLowerCase();
     setFilteredGroups(
-      groups.filter((group) => {
+      groupsSorted.filter((group) => {
         const matchesSearch =
           group.title.toLowerCase().includes(keyword) ||
           (group.description || "").toLowerCase().includes(keyword) ||
@@ -190,7 +195,7 @@ export default function GroupManagement() {
           {
             icon: <CheckCircle className="w-7 h-7 text-green-600 mb-1" />,
             label: "Đang hoạt động",
-            count: groups.filter((g) => g.status === "ACTIVE").length,
+            count: groupsSorted.filter((g) => g.status === "ACTIVE").length,
             onClick: () => setStatusFilter("ACTIVE"),
             color: "border-blue-200 hover:bg-blue-50 hover:border-blue-400",
           },
@@ -222,7 +227,7 @@ export default function GroupManagement() {
           {
             icon: <Ban className="w-7 h-7 text-red-600 mb-1" />,
             label: "Cấm vĩnh viễn",
-            count: groups.filter((g) => g.status === "BANNED").length,
+            count: groupsSorted.filter((g) => g.status === "BANNED").length,
             onClick: () => setStatusFilter("BANNED"),
             color: "border-blue-200 hover:bg-blue-50 hover:border-blue-400",
           },

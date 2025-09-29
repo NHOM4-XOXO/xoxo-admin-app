@@ -23,6 +23,7 @@ import FilterDropdown from "../components/FilterDropdown";
 import "../index.css";
 import ConfirmModal from "../components/modals/ConfirmModal";
 import { useAuth } from "../contexts/AuthContext";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const optionListStatus: { value: "all" | ReportStatus; label: string }[] = [
   { value: "all", label: "Tất cả trạng thái" },
@@ -62,17 +63,41 @@ export default function ReportManagement() {
     titleClass?: string;
   } | null>(null);
 
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedReports = filteredReports.slice(startIndex, endIndex);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const getAuthToken = (): string | null => {
+    try {
+      const auth =
+        localStorage.getItem("adminAuth") ||
+        sessionStorage.getItem("adminAuth");
+      if (!auth) return null;
+      return JSON.parse(auth).token || null;
+    } catch {
+      return null;
+    }
+  };
   // Modal adminNotes for rejection
   const [rejectModal, setRejectModal] = useState<{
     report: ReportItemResponse;
     adminNotes: string;
   } | null>(null);
 
+  const reportsSorted = [...(Array.isArray(reports) ? reports : [])].sort(
+    (a: any, b: any) => {
+      const aClosed = String(a.status).toUpperCase() === "CLOSED";
+      const bClosed = String(b.status).toUpperCase() === "CLOSED";
+      if (aClosed !== bClosed) return aClosed ? 1 : -1; // CLOSED -> push to end
+      return Date.parse(b.createdAt || "") - Date.parse(a.createdAt || "");
+    }
+  );
   // Filter reports based on search and filter criteria
   useEffect(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredReports(
-      reports.filter((report: ReportItemResponse) => {
+      reportsSorted.filter((report: ReportItemResponse) => {
         const matchesSearch =
           removeVietnameseTones(
             (report.reporterName || "").toLowerCase()
@@ -93,15 +118,113 @@ export default function ReportManagement() {
   }, [searchTerm, statusFilter]);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reportId = params.get("reportId");
+    if (!reportId) return;
+
+    const found = reports.find((r: any) => String(r.id) === reportId);
+    if (found) {
+      setSelectedReport(found);
+      setShowReportModal(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, reports]);
+    
+
+  useEffect(() => {
     if (selectedReport) {
       const updated = reports.find((r) => r.id === selectedReport.id);
       if (updated) setSelectedReport(updated);
     }
   }, [reports]);
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedReports = filteredReports.slice(startIndex, endIndex);
+  async function searchPostsViaUserApi(keyword: string) {
+    const apiBase = import.meta.env.VITE_API_URL || ""; // empty -> proxy/relative
+    const token = getAuthToken();
+    const url = `${apiBase}/api/user/search/users?keyword=${encodeURIComponent(
+      keyword
+    )}&page=0&size=20`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Accept: "application/json",
+      },
+      credentials: "include",
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data?.posts || null;
+  }
+
+  // 1) gọi khi admin mở report hoặc nhấn nút "Mở bài viết"
+  async function goToReportedPost(
+    report: any,
+    navigate: ReturnType<typeof useNavigate>
+  ) {
+    const reportStatus = report?.status
+      ? encodeURIComponent(String(report.status))
+      : "";
+    const navTo = (id: string | number) =>
+      navigate(
+        `/posts?postId=${encodeURIComponent(
+          String(id)
+        )}&reportId=${encodeURIComponent(String(report?.id ?? ""))}${
+          reportStatus ? `&reportStatus=${reportStatus}` : ""
+        }`
+      );
+
+    // 1) direct id(s)
+    if (report?.reportTargetId) {
+      navTo(report.reportTargetId);
+      return;
+    }
+    if (
+      Array.isArray(report?.reportedEntityIds) &&
+      report.reportedEntityIds.length
+    ) {
+      navTo(report.reportedEntityIds[0]);
+      return;
+    }
+
+    // 2) try parse URL/id from text fields
+    const text = (
+      report?.description ||
+      report?.additionalInfo ||
+      report?.message ||
+      ""
+    ).toString();
+    const urlMatch = text.match(/https?:\/\/[^\s)]+/);
+    if (urlMatch) {
+      try {
+        const u = new URL(urlMatch[0]);
+        const idFromPath =
+          u.pathname.match(/\/posts?\/?(\d+)/)?.[1] ||
+          u.search.match(/id=(\d+)/)?.[1];
+        if (idFromPath) {
+          navTo(Number(idFromPath));
+          return;
+        }
+      } catch (e) {}
+    }
+
+    // 3) fallback: use existing search helper
+    const snippet = text.split(/\s+/).filter(Boolean).slice(0, 20).join(" ");
+    if (snippet) {
+      try {
+        const posts = await searchPostsViaUserApi(snippet);
+        if (Array.isArray(posts) && posts.length > 0) {
+          navTo(posts[0].id);
+          return;
+        }
+      } catch (err) {
+        console.error("search posts error", err);
+      }
+    }
+
+    alert("Không tìm thấy bài viết từ nội dung report. Vui lòng tìm thủ công.");
+  }
+
 
   const getStatusBadge = (status: ReportStatus) => {
     switch (status) {
@@ -215,7 +338,7 @@ export default function ReportManagement() {
             Tổng báo cáo
           </span>
           <span className="text-lg font-bold text-gray-900 mt-1">
-            {reports.length}
+            {reportsSorted.length}
           </span>
         </button>
         <button
@@ -225,7 +348,7 @@ export default function ReportManagement() {
           <Clock className="w-7 h-7 text-yellow-600 mb-1" />
           <span className="text-sm font-medium text-gray-600">Chờ xử lý</span>
           <span className="text-lg font-bold text-gray-900 mt-1">
-            {reports.filter((r) => r.status === "PENDING").length}
+            {reportsSorted.filter((r) => r.status === "PENDING").length}
           </span>
         </button>
         <button
@@ -235,7 +358,7 @@ export default function ReportManagement() {
           <RefreshCw className="w-7 h-7 text-blue-600 mb-1 animate-spin-slow" />
           <span className="text-sm font-medium text-gray-600">Đang xử lý</span>
           <span className="text-lg font-bold text-gray-900 mt-1">
-            {reports.filter((r) => r.status === "IN_PROGRESS").length}
+            {reportsSorted.filter((r) => r.status === "IN_PROGRESS").length}
           </span>
         </button>
       </div>
@@ -247,7 +370,7 @@ export default function ReportManagement() {
           <Check className="w-7 h-7 text-green-600 mb-1" />
           <span className="text-sm font-medium text-gray-600">Đã xử lý</span>
           <span className="text-lg font-bold text-gray-900 mt-1">
-            {reports.filter((r) => r.status === "RESOLVED").length}
+            {reportsSorted.filter((r) => r.status === "RESOLVED").length}
           </span>
         </button>
         <button
@@ -257,7 +380,7 @@ export default function ReportManagement() {
           <UserX className="w-7 h-7 text-red-600 mb-1" />
           <span className="text-sm font-medium text-gray-600">Vi phạm</span>
           <span className="text-lg font-bold text-gray-900 mt-1">
-            {reports.filter((r) => r.status === "REJECTED").length}
+            {reportsSorted.filter((r) => r.status === "REJECTED").length}
           </span>
         </button>
         <button
@@ -269,7 +392,7 @@ export default function ReportManagement() {
             Chuyển cấp cao hơn
           </span>
           <span className="text-lg font-bold text-gray-900 mt-1">
-            {reports.filter((r) => r.status === "ESCALATED").length}
+            {reportsSorted.filter((r) => r.status === "ESCALATED").length}
           </span>
         </button>
       </div>
@@ -342,7 +465,7 @@ export default function ReportManagement() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-gray-900 line-clamp-3">
-                      {report.reportReason}
+                      {translateReportReason(report.reportReason)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -412,10 +535,13 @@ export default function ReportManagement() {
                   Chi tiết báo cáo
                 </h3>
                 <button
-                  onClick={() => setShowReportModal(false)}
+                  onClick={() => {
+                    setShowReportModal(false);
+                    navigate(location.pathname, { replace: true });
+                  }}
                   className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
-                  ×
+                  <X />
                 </button>
               </div>
               <div className="space-y-4">
@@ -448,7 +574,7 @@ export default function ReportManagement() {
                     </span>
                     <div className="mt-1 p-3 bg-gray-50 rounded-lg">
                       <p className="text-sm text-gray-900">
-                        {selectedReport.reportReason}
+                        {translateReportReason(selectedReport.reportReason)}
                       </p>
                     </div>
                     <span className="text-sm font-medium text-gray-500">
@@ -577,6 +703,15 @@ export default function ReportManagement() {
                       >
                         <AlertTriangle className="w-5 h-5" />
                       </button>
+                      <button
+                        onClick={() =>
+                          goToReportedPost(selectedReport, navigate)
+                        }
+                        className="flex items-center text-sm text-blue-600 hover:text-blue-900"
+                        title="Mở bài viết bị tố"
+                      >
+                        <Eye className="w-4 h-4 mr-2 inline-block" />
+                      </button>
                     </div>
                   )}
 
@@ -618,6 +753,15 @@ export default function ReportManagement() {
                           title="Đánh dấu vi phạm"
                         >
                           <X className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() =>
+                            goToReportedPost(selectedReport, navigate)
+                          }
+                          className="flex items-center text-sm text-blue-600 hover:text-blue-900"
+                          title="Mở bài viết bị tố"
+                        >
+                          <Eye className="w-4 h-4 mr-2 inline-block" />
                         </button>
                       </div>
                     )}
@@ -666,6 +810,15 @@ export default function ReportManagement() {
                         title="Xóa vĩnh viễn"
                       >
                         <Trash2 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          goToReportedPost(selectedReport, navigate)
+                        }
+                        className="flex items-center text-sm text-blue-600 hover:text-blue-900"
+                        title="Mở bài viết bị tố"
+                      >
+                        <Eye className="w-4 h-4 mr-2 inline-block" />
                       </button>
                     </div>
                   )}
@@ -781,19 +934,42 @@ function getStatusBgClass(status: string) {
       return "bg-blue-600 hover:bg-blue-700";
   }
 }
-// function getStatusText(status: string) {
-//   switch (status) {
-//     case "IN_PROGRESS":
-//       return "Đang xử lý";
-//     case "RESOLVED":
-//       return "Đã xử lý";
-//     case "REJECTED":
-//       return "Vi phạm";
-//     case "ESCALATED":
-//       return "Chuyển cấp cao hơn";
-//     case "CLOSED":
-//       return "Đã đóng";
-//     default:
-//       return status;
-//   }
-// }
+
+function translateReportReason(reason?: string) {
+  if (!reason) return "Không xác định";
+  switch (reason) {
+    case "SPAM":
+      return "Tin rác";
+    case "HARASSMENT":
+      return "Quấy rối";
+    case "HATE_SPEECH":
+      return "Lời nói căm ghét";
+    case "VIOLENCE":
+      return "Bạo lực";
+    case "NUDITY":
+      return "Nội dung khiêu dâm";
+    case "FALSE_INFORMATION":
+      return "Thông tin sai lệch";
+    case "COPYRIGHT_INFRINGEMENT":
+      return "Vi phạm bản quyền";
+    case "IMPERSONATION":
+      return "Mạo danh";
+    case "SCAM_OR_FRAUD":
+      return "Lừa đảo / Gian lận";
+    case "SELF_HARM":
+      return "Tự gây hại";
+    case "TERRORISM":
+      return "Khủng bố";
+    case "DRUG_SALES":
+      return "Buôn bán chất cấm";
+    case "INAPPROPRIATE_CONTENT":
+      return "Nội dung không phù hợp";
+    case "OTHER":
+      return "Khác";
+    default:
+      return String(reason)
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}

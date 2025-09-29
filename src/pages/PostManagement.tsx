@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Eye,
   Trash2,
@@ -10,6 +10,8 @@ import {
   FileText,
   AlertTriangle,
   EyeOff,
+  X,
+  Undo2,
 } from "lucide-react";
 import Tippy from "@tippyjs/react";
 import {
@@ -24,6 +26,7 @@ import SearchComponent from "../components/SearchComponent";
 import "../index.css";
 import FilterDropdown from "../components/FilterDropdown";
 import ConfirmModal from "../components/modals/ConfirmModal";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const optionListStatus = [
   { value: "all", label: "Tất cả trạng  thái" },
@@ -36,11 +39,60 @@ export default function PostManagement() {
   // Redux hooks for data fetching and mutations
   // Nếu response là { statusCode, message, data } thì lấy posts = data?.data || []
   const { data: postsResponse, isLoading, error } = useGetPostsQuery();
-  const posts: PostItemResponse[] = Array.isArray(postsResponse)
-    ? (postsResponse as PostItemResponse[])
-    : Array.isArray((postsResponse as any)?.data)
-    ? ((postsResponse as any).data as PostItemResponse[])
-    : [];
+  // const rawItems = Array.isArray(postsResponse)
+  //   ? (postsResponse as any[])
+  //   : Array.isArray((postsResponse as any)?.data)
+  //   ? ((postsResponse as any).data as any[])
+  //   : [];
+
+  // const posts: PostItemResponse[] = rawItems.map((it) =>
+  //   it?.post
+  //     ? { ...(it.post as PostItemResponse), media: it.media || [] }
+  //     : (it as PostItemResponse)
+  // );
+
+  // const uniquePosts = (() => {
+  //   const m = new Map<number | string, PostItemResponse>();
+  //   posts.forEach((p) => {
+  //     if (p && p.id != null) m.set(p.id, p);
+  //   });
+  //   return Array.from(m.values());
+  // })();
+
+  // const sortedPosts = [...uniquePosts].sort((a, b) => {
+  //   const aDeleted = a.status === "DELETED" || a.status === "DELETE";
+  //   const bDeleted = b.status === "DELETED" || b.status === "DELETE";
+  //   if (aDeleted !== bDeleted) return aDeleted ? 1 : -1;
+  //   return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+  // });
+  const posts = useMemo(() => {
+    const items = Array.isArray(postsResponse)
+      ? (postsResponse as any[])
+      : Array.isArray((postsResponse as any)?.data)
+      ? ((postsResponse as any).data as any[])
+      : [];
+    return items.map((it) =>
+      it?.post ? { ...(it.post as PostItemResponse), media: it.media || [] } : (it as PostItemResponse)
+    );
+  }, [postsResponse]);
+
+  const uniquePosts = useMemo(() => {
+    const m = new Map<number | string, PostItemResponse>();
+    posts.forEach((p) => {
+      if (p && p.id != null) m.set(p.id, p);
+    });
+    return Array.from(m.values());
+  }, [posts]);
+
+  const sortedPosts = useMemo(() => {
+    return [...uniquePosts].sort((a, b) => {
+      const aDeleted = a.status === "DELETED" || a.status === "DELETE";
+      const bDeleted = b.status === "DELETED" || b.status === "DELETE";
+      if (aDeleted !== bDeleted) return aDeleted ? 1 : -1;
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+  }, [uniquePosts]);
+
   const [updatePost, { isLoading: isUpdating }] = useUpdatePostMutation();
   const [deletePost, { isLoading: isDeleting }] = useDeletePostMutation();
 
@@ -51,6 +103,10 @@ export default function PostManagement() {
     null
   );
   const [showPostModal, setShowPostModal] = useState(false);
+  const [expandedPostId, setExpandedPostId] = useState<number | null>(null);
+    const toggleCaption = (id: number) =>
+      setExpandedPostId((prev) => (prev === id ? null : id));
+  const [showFullModalContent, setShowFullModalContent] = useState(false);
 
   const [filteredPosts, setFilteredPosts] = useState<PostItemResponse[]>([]);
 
@@ -61,7 +117,7 @@ export default function PostManagement() {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
-
+  
   useEffect(() => {
     if (currentPage !== 1) {
       setCurrentPage(1);
@@ -73,7 +129,7 @@ export default function PostManagement() {
   useEffect(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
     setFilteredPosts(
-      posts.filter((post: PostItemResponse) => {
+      sortedPosts.filter((post: PostItemResponse) => {
         // Tìm kiếm theo tên tác giả hoặc nội dung
         const authorName = `${post.authorFirstName || ""} ${
           post.authorLastName || ""
@@ -97,6 +153,154 @@ export default function PostManagement() {
     colorClass?: string;
     titleClass?: string;
   } | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ...existing state: showPostModal, selectedPost, posts ...
+  const [postNotFound, setPostNotFound] = useState<{
+    id: string;
+    message?: string;
+  } | null>(null);
+  const [originReportId, setOriginReportId] = useState<string | null>(null);
+  const [originReportStatus, setOriginReportStatus] = useState<string | null>(
+    null
+  );
+  // Open modal and set URL query param
+  const openPostModal = (post: any) => {
+    setSelectedPost(post);
+    setShowPostModal(true);
+    setShowFullModalContent(false);
+    navigate(`${location.pathname}?postId=${post.id}`, { replace: false });
+  };
+
+  // Close modal and remove query param
+  //  const closePostModal = () => {
+  //    setShowPostModal(false);
+  //    setSelectedPost(null);
+  //    // remove query param
+  //    navigate(location.pathname, { replace: true });
+  //  };
+
+  // On mount: if ?postId= exists, try open that post's modal
+  // ...existing code...
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const postId = params.get("postId");
+    const reportId = params.get("reportId") || null;
+    const reportStatus = params.get("reportStatus") || null;
+    setOriginReportId(reportId);
+    setOriginReportStatus(reportStatus);
+
+    if (!postId) {
+      setShowPostModal(false);
+      setSelectedPost(null);
+      setPostNotFound(null);
+      return;
+    }
+
+    // 1) tìm trong danh sách đã load
+    const found =
+      posts?.find((p: any) => String(p.id) === postId) ||
+      filteredPosts?.find((p: any) => String(p.id) === postId) ||
+      sortedPosts.find((p: any) => String(p.id) === postId);
+
+    // Nếu tìm thấy trong list nhưng status là DELETED => hiển thị not-found
+    if (found) {
+      if (found.status === "DELETED" || found.status === "DELETE") {
+        setSelectedPost(null);
+        setPostNotFound({
+          id: postId,
+          message: "Bài viết đã bị xóa hoặc không tồn tại.",
+        });
+        setShowPostModal(true);
+        return;
+      }
+
+      setSelectedPost(found);
+      setShowPostModal(true);
+      setPostNotFound(null);
+      return;
+    }
+
+    // 2) nếu chưa có trong list -> fetch single post (nếu backend có endpoint)
+    (async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_URL || "";
+        const res = await fetch(
+          `${apiBase}/api/admin/posts/${encodeURIComponent(postId)}`,
+          {
+            credentials: "include",
+          }
+        );
+
+        // debug
+        console.log("fetch post by id", postId, "status", res.status);
+
+        // treat 404 / 204 / no-content as not found
+        if (res.status === 404 || res.status === 204) {
+          setSelectedPost(null);
+          setShowPostModal(true);
+          setPostNotFound({
+            id: postId,
+            message: "Bài viết đã bị xóa hoặc không tồn tại.",
+          });
+          return;
+        }
+
+        if (!res.ok) {
+          // other error -> show notification inside modal
+          setSelectedPost(null);
+          setShowPostModal(true);
+          setPostNotFound({
+            id: postId,
+            message: "Không thể tải bài viết (lỗi server).",
+          });
+          return;
+        }
+
+        const json = await res.json();
+        const p = json?.data || json;
+        const normalized =
+          p && p.post
+            ? { ...(p.post as PostItemResponse), media: p.media || [] }
+            : (p as PostItemResponse);
+        if (!normalized) {
+          setSelectedPost(null);
+          setShowPostModal(true);
+          setPostNotFound({
+            id: postId,
+            message: "Bài viết đã bị xóa hoặc không tồn tại.",
+          });
+          return;
+        }
+
+        // nếu post trả về có status deleted -> treat as not found
+        if (normalized.status === "DELETED" || normalized.status === "DELETE") {
+          setSelectedPost(null);
+          setShowPostModal(true);
+          setPostNotFound({
+            id: postId,
+            message: "Bài viết đã bị xóa hoặc không tồn tại.",
+          });
+          return;
+        }
+
+        setSelectedPost(normalized);
+        setShowPostModal(true);
+        setPostNotFound(null);
+      } catch (err) {
+        console.error("Fetch post by id error", err);
+        setSelectedPost(null);
+        setShowPostModal(true);
+        setPostNotFound({
+          id: postId,
+          message: "Lỗi khi tải bài viết.",
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, sortedPosts]);
+  // ...existing code...
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -145,10 +349,10 @@ export default function PostManagement() {
     }
   };
 
-  const viewPostDetails = (post: PostItemResponse) => {
-    setSelectedPost(post);
-    setShowPostModal(true);
-  };
+  // const viewPostDetails = (post: PostItemResponse) => {
+  //   setSelectedPost(post);
+  //   setShowPostModal(true);
+  // };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("vi-VN");
@@ -181,7 +385,6 @@ export default function PostManagement() {
           </p>
         </div>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
@@ -226,7 +429,6 @@ export default function PostManagement() {
           </div>
         ))}
       </div>
-
       {/* Filters */}
       <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -244,14 +446,13 @@ export default function PostManagement() {
           />
         </div>
       </div>
-
       {/* Posts Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 table-fixed">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider w-[520px]">
                   Bài viết
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
@@ -287,9 +488,16 @@ export default function PostManagement() {
                         <div className="text-xs text-gray-500 mb-1">
                           {post.location}
                         </div>
-                        <div className="text-sm text-gray-600 line-clamp-2 mt-1">
-                          {post.content}
+                        <div className="px-2 text-gray-700 text-sm">
+                          <p
+                            className={`${
+                              expandedPostId === post.id ? "" : "line-clamp-2"
+                            } break-words whitespace-pre-wrap`}
+                          >
+                            {post.content || ""}
+                          </p>
                         </div>
+
                         {/* Nếu có hashtags */}
                         {post.hashtags && (
                           <div className="mt-1 text-xs text-blue-600">
@@ -338,7 +546,7 @@ export default function PostManagement() {
                         interactive={false}
                       >
                         <button
-                          onClick={() => viewPostDetails(post)}
+                          onClick={() => openPostModal(post)}
                           className="text-blue-600 hover:text-blue-900 cursor-pointer"
                           title="Xem chi tiết"
                         >
@@ -448,7 +656,7 @@ export default function PostManagement() {
       </div>
 
       {/* Post Details Modal */}
-      {showPostModal && selectedPost && (
+      {showPostModal && (
         <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
@@ -457,66 +665,226 @@ export default function PostManagement() {
                   Chi tiết bài viết
                 </h3>
                 <button
-                  onClick={() => setShowPostModal(false)}
+                  onClick={() => {
+                    setShowPostModal(false);
+                    setSelectedPost(null);
+                    setPostNotFound(null);
+                    navigate(location.pathname, { replace: true });
+                  }}
                   className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
-                  ×
+                  <X />
                 </button>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <img
-                    className="h-12 w-12 rounded-full"
-                    src={selectedPost.authorAvatarUrl || "/placeholder.svg"}
-                    alt={`${selectedPost.authorFirstName || ""} ${
-                      selectedPost.authorLastName || ""
-                    }`}
-                  />
-                  <div>
-                    <h4 className="text-lg font-medium">
-                      {selectedPost.authorFirstName}{" "}
-                      {selectedPost.authorLastName}
-                    </h4>
-                    <p className="text-sm text-gray-500">
-                      {formatDate(selectedPost.createdAt)}
-                    </p>
-                    {getStatusBadge(selectedPost.status)}
-                  </div>
-                </div>
-                <div className="border-t pt-4">
-                  <p className="text-gray-900 whitespace-pre-wrap">
-                    {selectedPost.content}
+              {/* Nếu post bị xóa hoặc không tồn tại */}
+              {postNotFound ? (
+                <div className="py-8 text-center">
+                  <p className="text-red-600 font-semibold mb-2">
+                    Bài viết không tồn tại hoặc đã bị xóa.
                   </p>
-                  {selectedPost.hashtags && (
-                    <div className="mt-2 text-xs text-blue-600">
-                      #{selectedPost.hashtags}
+                  <p className="text-sm text-gray-600 mb-6">
+                    ID bài viết: {postNotFound.id}
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={() => {
+                        const target = originReportId
+                          ? `/reports?reportId=${encodeURIComponent(
+                              originReportId
+                            )}`
+                          : "/reports";
+                        navigate(target);
+                        setShowPostModal(false);
+                        setPostNotFound(null);
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded"
+                    >
+                      Quay lại báo cáo
+                    </button>
+                  </div>
+                </div>
+              ) : selectedPost ? (
+                // Hiển thị chi tiết bài viết
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <img
+                      className="h-12 w-12 rounded-full"
+                      src={selectedPost.authorAvatarUrl || "/placeholder.svg"}
+                      alt={`${selectedPost.authorFirstName || ""} ${
+                        selectedPost.authorLastName || ""
+                      }`}
+                    />
+                    <div>
+                      <h4 className="text-lg font-medium">
+                        {selectedPost.authorFirstName}{" "}
+                        {selectedPost.authorLastName}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(selectedPost.createdAt)}
+                      </p>
+                      {getStatusBadge(selectedPost.status)}
                     </div>
-                  )}
-                  <div className="mt-2 text-xs text-gray-500">
-                    Vị trí: {selectedPost.location}
+                  </div>
+                  <div className="border-t pt-4">
+                    {/* modal content with xem thêm / thu gọn */}
+                    {selectedPost.content ? (
+                      showFullModalContent ? (
+                        <>
+                          <p className="text-gray-900 whitespace-pre-wrap">
+                            {selectedPost.content}
+                          </p>
+                          <button
+                            onClick={() => setShowFullModalContent(false)}
+                            className="text-blue-500 text-sm mt-2 hover:underline"
+                          >
+                            Thu gọn
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-gray-900">
+                            {selectedPost.content.length > 500
+                              ? `${selectedPost.content.slice(0, 500)}…`
+                              : selectedPost.content}
+                          </p>
+                          {selectedPost.content.length > 500 && (
+                            <button
+                              onClick={() => setShowFullModalContent(true)}
+                              className="text-blue-500 text-sm mt-2 hover:underline"
+                            >
+                              Xem thêm
+                            </button>
+                          )}
+                        </>
+                      )
+                    ) : null}
+                    {selectedPost.media && selectedPost.media.length > 0 && (
+                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedPost.media.map((m) => (
+                          <div key={m.id} className="overflow-hidden rounded-md">
+                            {m.mediaType === "IMAGE" ? (
+                              <img
+                                src={m.mediaUrl}
+                                alt={m.originalFilename || `media-${m.id}`}
+                                className="w-full h-48 object-cover rounded-md"
+                              />
+                            ) : (
+                              <video
+                                src={m.mediaUrl}
+                                controls
+                                className="w-full h-48 object-cover rounded-md"
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {selectedPost.hashtags && (
+                      <div className="mt-2 text-xs text-blue-600">
+                        #{selectedPost.hashtags}
+                      </div>
+                    )}
+                    <div className="mt-2 text-xs text-gray-500">
+                      Vị trí: {selectedPost.location}
+                    </div>
+                  </div>
+                  <div className="border-t pt-4 flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center space-x-6">
+                      <span className="flex items-center">
+                        <Heart className="h-4 w-4 mr-1" />
+                        {selectedPost.likeCount} lượt thích
+                      </span>
+                      <span className="flex items-center">
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        {selectedPost.commentCount} bình luận
+                      </span>
+                      <span className="flex items-center">
+                        <Share className="h-4 w-4 mr-1" />
+                        {selectedPost.shareCount} chia sẻ
+                      </span>
+                      <span className="flex items-center">
+                        <Eye className="h-4 w-4 mr-1" />
+                        {selectedPost.viewCount} lượt xem
+                      </span>
+                    </div>
+                    {originReportId && (
+                      <div className="flex justify-end items-center space-x-2 mt-4">
+                        {/* Quay lại báo cáo */}
+                        <button
+                          onClick={() => {
+                            navigate(
+                              `/reports?reportId=${encodeURIComponent(
+                                originReportId
+                              )}`
+                            );
+                            setShowPostModal(false);
+                            setOriginReportId(null);
+                          }}
+                          className="flex items-center px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
+                          title="Quay lại báo cáo"
+                        >
+                          <Undo2 className="w-4 h-4" />
+                        </button>
+
+                        {/* Nếu report = REJECTED thì show Ẩn / Xóa, khoảng cách đều với nút quay lại */}
+                        {originReportStatus === "REJECTED" && (
+                          <>
+                            <button
+                              onClick={() =>
+                                setConfirmModal({
+                                  message:
+                                    "Bạn có chắc chắn muốn ẩn bài viết này không?",
+                                  onConfirm: async () => {
+                                    if (!selectedPost) return;
+                                    await handleStatusChange(
+                                      selectedPost.id,
+                                      "HIDDEN"
+                                    );
+                                    setConfirmModal(null);
+                                  },
+                                  colorClass:
+                                    getStatusBgColor("HIDDEN").colorClass,
+                                  titleClass:
+                                    getStatusBgColor("HIDDEN").titleClass,
+                                })
+                              }
+                              className="flex items-center px-3 py-1 text-sm bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200"
+                              title="Ẩn bài viết"
+                            >
+                              <EyeOff className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                setConfirmModal({
+                                  message:
+                                    "Bạn có chắc chắn muốn xóa bài viết này? Hành động không thể hoàn tác.",
+                                  onConfirm: async () => {
+                                    if (!selectedPost) return;
+                                    await deletePost(selectedPost.id);
+                                    setConfirmModal(null);
+                                  },
+                                  colorClass: "bg-red-600 hover:bg-red-700",
+                                  titleClass: "text-red-600",
+                                })
+                              }
+                              className="flex items-center px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                              title="Xóa bài viết"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="border-t pt-4 flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center space-x-6">
-                    <span className="flex items-center">
-                      <Heart className="h-4 w-4 mr-1" />
-                      {selectedPost.likeCount} lượt thích
-                    </span>
-                    <span className="flex items-center">
-                      <MessageSquare className="h-4 w-4 mr-1" />
-                      {selectedPost.commentCount} bình luận
-                    </span>
-                    <span className="flex items-center">
-                      <Share className="h-4 w-4 mr-1" />
-                      {selectedPost.shareCount} chia sẻ
-                    </span>
-                    <span className="flex items-center">
-                      <Eye className="h-4 w-4 mr-1" />
-                      {selectedPost.viewCount} lượt xem
-                    </span>
-                  </div>
+              ) : (
+                // Loading state
+                <div className="py-8 text-center">
+                  <p>Đang tải...</p>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

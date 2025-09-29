@@ -73,11 +73,15 @@ export default function UserManagement() {
 
   const { data, isLoading, error, refetch } = useGetUsersQuery();
   let users: UserType[] = [];
-  if (Array.isArray(data)) {
-    users = data;
-  } else if (data && Array.isArray((data as any).data)) {
-    users = (data as any).data;
-  }
+   if (Array.isArray(data)) {
+     users = data;
+   } else if (data && Array.isArray((data as any).data)) {
+     users = (data as any).data;
+   }
+  // Sort newest first
+  const usersSorted = [...users].sort(
+    (a, b) => Date.parse(b.createdAt || "") - Date.parse(a.createdAt || "")
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -95,7 +99,7 @@ export default function UserManagement() {
 
   const filteredUsers = useMemo(() => {
     const keyword = removeVietnameseTones(searchTerm.toLowerCase());
-    return users.filter((user) => {
+    return usersSorted.filter((user) => {
       const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
       const matchesSearch =
         removeVietnameseTones(fullName.toLowerCase()).includes(keyword) ||
