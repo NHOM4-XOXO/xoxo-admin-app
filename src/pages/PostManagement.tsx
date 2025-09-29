@@ -103,9 +103,8 @@ export default function PostManagement() {
     null
   );
   const [showPostModal, setShowPostModal] = useState(false);
-  const [expandedPostId, setExpandedPostId] = useState<number | null>(null);
-    const toggleCaption = (id: number) =>
-      setExpandedPostId((prev) => (prev === id ? null : id));
+  const [expandedPostId] = useState<number | null>(null);
+  
   const [showFullModalContent, setShowFullModalContent] = useState(false);
 
   const [filteredPosts, setFilteredPosts] = useState<PostItemResponse[]>([]);
